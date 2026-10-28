@@ -1,0 +1,199 @@
+# ============================================================
+# LiquidOS — splash de arranque (Plymouth, plugin «script»)
+#
+# Composición:
+#   · logo que aparece con fundido y flota suavemente
+#   · tres puntos que laten en secuencia
+#   · barra de progreso con un nodo luminoso que avanza según
+#     el progreso real de arranque (Plymouth.SetBootProgressFunction)
+#
+# Solo usa la API estándar del plugin script (sin Math, sin
+# dependencias externas) para maximizar la compatibilidad con
+# distintas versiones de Plymouth.
+# ============================================================
+
+# Fondo plano: permite que el nodo de progreso se funda con el
+# fondo sin bordes visibles y mantiene el arranque muy ligero.
+Window.SetBackgroundTopColor(0.020, 0.028, 0.050);
+Window.SetBackgroundBottomColor(0.020, 0.028, 0.050);
+
+# ------------------------- Recursos -------------------------
+
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetOpacity(0.0);
+
+bar.image = Image("bar.png");
+bar.sprite = Sprite(bar.image);
+bar.sprite.SetOpacity(0.0);
+
+knob.image = Image("knob.png");
+knob.sprite = Sprite(knob.image);
+knob.sprite.SetOpacity(0.0);
+
+dot.image = Image("dot.png");
+dot1 = Sprite(dot.image);
+dot2 = Sprite(dot.image);
+dot3 = Sprite(dot.image);
+
+dot1.SetOpacity(0.0);
+dot2.SetOpacity(0.0);
+dot3.SetOpacity(0.0);
+
+# ------------------------- Estado ---------------------------
+
+frame = 0;
+float_frame = 0;
+sweep_frame = 0;
+pulse_frame = 0;
+
+boot_progress = 0.0;
+shown_progress = 0.0;
+
+logo_base_y = 0;
+bar_x = 0;
+bar_y = 0;
+bar_w = 0;
+knob_w = 0;
+knob_h = 0;
+dot_y = 0;
+
+# Plymouth entrega (segundos, 0.0..1.0) cada vez que avanza el arranque.
+fun on_boot_progress(duration, progress) {
+    boot_progress = progress;
+}
+
+Plymouth.SetBootProgressFunction(on_boot_progress);
+
+# ----------------------- Disposición ------------------------
+
+fun colocar() {
+    w = Window.GetWidth();
+    h = Window.GetHeight();
+
+    lw = logo.image.GetWidth();
+    lh = logo.image.GetHeight();
+
+    bar_w = bar.image.GetWidth();
+    knob_w = knob.image.GetWidth();
+    knob_h = knob.image.GetHeight();
+
+    # Bloque centrado, ligeramente por encima del centro geométrico.
+    logo_base_y = h / 2 - lh / 2 - 34;
+    logo.sprite.SetX(w / 2 - lw / 2);
+    logo.sprite.SetY(logo_base_y);
+
+    bar_x = w / 2 - bar_w / 2;
+    bar_y = logo_base_y + lh + 46;
+    bar.sprite.SetX(bar_x);
+    bar.sprite.SetY(bar_y);
+
+    # El nodo se centra verticalmente respecto a la barra.
+    knob.sprite.SetY(bar_y + 2 - knob_h / 2);
+
+    dot_y = bar_y + 34;
+    dw = dot.image.GetWidth();
+
+    dot1.SetX(w / 2 - dw - 18);
+    dot1.SetY(dot_y);
+
+    dot2.SetX(w / 2 - dw / 2);
+    dot2.SetY(dot_y);
+
+    dot3.SetX(w / 2 + 18);
+    dot3.SetY(dot_y);
+}
+
+# ------------------------ Animación -------------------------
+
+# Pulso escalonado: cada punto sube y baja de brillo en cadena.
+fun pulso(fase) {
+    if (fase < 0) {
+        fase = fase + 72;
+    }
+    if (fase >= 72) {
+        fase = fase - 72;
+    }
+    if (fase < 36) {
+        return 0.18 + 0.82 * (1.0 - fase / 36.0);
+    }
+    return 0.18 + 0.82 * ((fase - 36.0) / 36.0);
+}
+
+fun refrescar() {
+    frame = frame + 1;
+    if (frame > 100000) {
+        frame = 0;
+    }
+
+    colocar();
+
+    # Fundido de entrada de todo el conjunto.
+    if (frame < 45) {
+        entrada = frame / 45.0;
+    } else {
+        entrada = 1.0;
+    }
+
+    logo.sprite.SetOpacity(entrada);
+
+    # Flotación suave del logo (±3 px) con una onda triangular.
+    float_frame = float_frame + 1;
+    if (float_frame > 160) {
+        float_frame = 0;
+    }
+    if (float_frame < 80) {
+        offset_y = -3.0 + 6.0 * (float_frame / 80.0);
+    } else {
+        offset_y = 3.0 - 6.0 * ((float_frame - 80) / 80.0);
+    }
+    logo.sprite.SetY(logo_base_y + offset_y);
+
+    dot1.SetOpacity(entrada * pulso(pulse_frame));
+    dot2.SetOpacity(entrada * pulso(pulse_frame - 12));
+    dot3.SetOpacity(entrada * pulso(pulse_frame - 24));
+
+    pulse_frame = pulse_frame + 1;
+    if (pulse_frame > 72) {
+        pulse_frame = 0;
+    }
+
+    # Barra de progreso.
+    bar.sprite.SetOpacity(entrada * 0.85);
+
+    if (boot_progress < 0.0) {
+        boot_progress = 0.0;
+    }
+    if (boot_progress > 1.0) {
+        boot_progress = 1.0;
+    }
+
+    if (boot_progress < 0.001) {
+        # Sin datos de progreso: recorrido indeterminado y sereno.
+        sweep_frame = sweep_frame + 1;
+        if (sweep_frame > 240) {
+            sweep_frame = 0;
+        }
+        if (sweep_frame < 120) {
+            shown_progress = 0.08 + 0.84 * (sweep_frame / 120.0);
+        } else {
+            shown_progress = 0.92 - 0.84 * ((sweep_frame - 120) / 120.0);
+        }
+    } else {
+        # Suavizado para que el nodo no dé saltos.
+        shown_progress = shown_progress + (boot_progress - shown_progress) * 0.09;
+    }
+
+    if (shown_progress < 0.0) {
+        shown_progress = 0.0;
+    }
+    if (shown_progress > 1.0) {
+        shown_progress = 1.0;
+    }
+
+    knob.sprite.SetX(bar_x + (bar_w - knob_w) * shown_progress);
+    knob.sprite.SetOpacity(entrada);
+}
+
+Plymouth.SetRefreshFunction(refrescar);
+colocar();

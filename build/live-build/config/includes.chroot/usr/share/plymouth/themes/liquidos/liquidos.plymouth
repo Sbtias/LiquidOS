@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=LiquidOS
+Description=Splash de arranque de LiquidOS
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/liquidos
+ScriptFile=/usr/share/plymouth/themes/liquidos/liquidos.script

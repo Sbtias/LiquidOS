@@ -1,0 +1,103 @@
+name: Construir ISO
+
+# Genera la ISO de LiquidOS en la nube y la deja como artefacto
+# descargable. No hace falta Linux, Docker ni permisos de admin
+# en tu equipo: GitHub ejecuta la compilación por ti.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión de LiquidOS (p. ej. 1.0)"
+        required: false
+        default: "1.0"
+      arch:
+        description: "Arquitectura"
+        required: false
+        default: "amd64"
+        type: choice
+        options:
+          - amd64
+  push:
+    branches: [main]
+    paths:
+      - "build/**"
+      - "branding/**"
+      - "assets/**"
+      - "desktop/**"
+      - "scripts/**"
+      - ".github/workflows/build-iso.yml"
+  release:
+    types: [published]
+
+concurrency:
+  group: iso-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ISO (Debian 12 · ${{ inputs.arch || 'amd64' }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      LIQUIDOS_VERSION: ${{ inputs.version || '1.0' }}
+      LIQUIDOS_ARCH: ${{ inputs.arch || 'amd64' }}
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Liberar espacio en disco
+        run: |
+          echo "Espacio inicial:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          sudo apt-get clean
+          echo "Espacio tras la limpieza:"
+          df -h /
+
+      - name: Instalar live-build y utilidades
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            live-build debootstrap xorriso squashfs-tools zstd \
+            mtools dosfstools isolinux syslinux-common syslinux-efi \
+            grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed \
+            shim-signed debian-archive-keyring rsync git ca-certificates
+          lb --version
+
+      - name: Construir la ISO
+        run: |
+          sudo --preserve-env=LIQUIDOS_VERSION,LIQUIDOS_ARCH \
+            env LIQUIDOS_VERSION="$LIQUIDOS_VERSION" LIQUIDOS_ARCH="$LIQUIDOS_ARCH" \
+            ./build/build-iso.sh
+
+      - name: Reunir resultados
+        run: |
+          ls -lh dist/
+          cat dist/*.sha256
+
+      - name: Publicar la ISO como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquidos-${{ env.LIQUIDOS_VERSION }}-${{ env.LIQUIDOS_ARCH }}
+          path: |
+            dist/*.iso
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Adjuntar a la release (solo etiquetas v*)
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.iso
+            dist/*.sha256
+          generate_release_notes: true

@@ -1,0 +1,32 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — instalador gráfico (Calamares)
+# Se instala de forma opcional: si el paquete no está en el
+# repositorio, la ISO sigue funcionando como live.
+# ============================================================
+set -uo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -qq || true
+
+if apt-get install -y -qq --no-install-recommends calamares; then
+    echo "[LiquidOS] Calamares instalado"
+    mkdir -p /usr/share/applications
+    cat > /usr/share/applications/liquidos-installer.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Instalar LiquidOS
+Comment=Instala LiquidOS en este equipo
+Exec=sudo calamares
+Icon=calamares
+Terminal=false
+Categories=System;
+Keywords=install;instalar;setup;
+EOF
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database /usr/share/applications || true
+    fi
+else
+    echo "[LiquidOS] aviso: Calamares no disponible; ISO solo en modo live"
+    rm -f /usr/share/applications/liquidos-installer.desktop 2>/dev/null || true
+fi

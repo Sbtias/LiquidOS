@@ -1,0 +1,20 @@
+# GDM — pantalla de inicio de sesión de LiquidOS
+# Se fusiona con /etc/gdm3/greeter.dconf-defaults al compilar.
+
+[org/gnome/login-screen]
+logo='/usr/share/pixmaps/liquidos-logo.png'
+banner-message-enable=true
+banner-message-text='LiquidOS 1.0 «Torrente» · Debian 12 · Software libre'
+disable-user-list=false
+
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+gtk-theme='WhiteSur-Dark'
+icon-theme='WhiteSur-dark'
+cursor-theme='WhiteSur-cursors'
+font-name='Inter 11'
+
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/liquidos/liquidos-dark.svg'
+picture-options='zoom'
+primary-color='#05070c'

@@ -1,0 +1,112 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — identidad del sistema
+# Se ejecuta dentro del chroot, antes de los hooks de tema.
+# ============================================================
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+VERSION="1.0"
+CODENAME="Torrente"
+HOST="liquidos"
+
+echo "[LiquidOS] Aplicando identidad ${VERSION} (${CODENAME})"
+
+cat > /etc/os-release <<EOF
+PRETTY_NAME="LiquidOS ${VERSION} (${CODENAME})"
+NAME="LiquidOS"
+VERSION_ID="${VERSION}"
+VERSION="${VERSION} (${CODENAME})"
+VERSION_CODENAME=liquidos
+ID=liquidos
+ID_LIKE=debian
+HOME_URL="https://liquidos.example"
+SUPPORT_URL="https://liquidos.example/soporte"
+BUG_REPORT_URL="https://liquidos.example/errores"
+DEBIAN_CODENAME=bookworm
+EOF
+
+cat > /etc/lsb-release <<EOF
+DISTRIB_ID=LiquidOS
+DISTRIB_RELEASE=${VERSION}
+DISTRIB_CODENAME=liquidos
+DISTRIB_DESCRIPTION="LiquidOS ${VERSION} (${CODENAME})"
+EOF
+
+cat > /etc/issue <<EOF
+
+      LiquidOS ${VERSION} «${CODENAME}»
+      \n \l
+
+EOF
+
+cat > /etc/issue.net <<EOF
+LiquidOS ${VERSION} (${CODENAME})
+EOF
+
+echo "${HOST}" > /etc/hostname
+grep -q "127.0.1.1" /etc/hosts || echo "127.0.1.1 ${HOST}" >> /etc/hosts
+
+# --- Shell por defecto para usuarios nuevos ---
+if [ -x /bin/zsh ] && [ -f /etc/adduser.conf ]; then
+    sed -i 's|^DSHELL=.*|DSHELL=/bin/zsh|' /etc/adduser.conf
+fi
+
+mkdir -p /etc/skel/.config/gtk-3.0
+cat > /etc/skel/.zshrc <<'EOF'
+# ~/.zshrc — LiquidOS
+autoload -Uz colors && colors
+autoload -Uz compinit && compinit
+
+HISTFILE=~/.zsh_history
+HISTSIZE=20000
+SAVEHIST=10000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_VERIFY
+
+PROMPT='%F{39}%n%f@%F{141}%m%f %F{244}%~%f %F{39}❯%f '
+RPROMPT='%(?..%F{196}✗ %?%f)'
+
+alias ls='ls --color=auto'
+alias ll='ls -lah'
+alias la='ls -A'
+alias grep='grep --color=auto'
+alias update='sudo apt update && sudo apt full-upgrade'
+EOF
+
+cat > /etc/skel/.config/gtk-3.0/settings.ini <<'EOF'
+[Settings]
+gtk-theme-name=WhiteSur-Dark
+gtk-icon-theme-name=WhiteSur-dark
+gtk-font-name=Inter 11
+gtk-application-prefer-dark-theme=1
+gtk-cursor-theme-name=WhiteSur-cursors
+gtk-enable-animations=true
+EOF
+
+mkdir -p /etc/skel/.config/gtk-4.0
+cat > /etc/skel/.config/gtk-4.0/settings.ini <<'EOF'
+[Settings]
+gtk-theme-name=WhiteSur-Dark
+gtk-icon-theme-name=WhiteSur-dark
+gtk-font-name=Inter 11
+gtk-application-prefer-dark-theme=1
+gtk-cursor-theme-name=WhiteSur-cursors
+gtk-enable-animations=true
+EOF
+
+mkdir -p /etc/skel/.config/gtk-4.0
+cat > /etc/skel/.config/gtk-4.0/gtk.css <<'EOF'
+/* LiquidOS — ajustes globales de GTK4 (libadwaita) */
+@define-color accent_color #5aa9ff;
+@define-color accent_bg_color #2f7fe0;
+EOF
+
+# --- Compilar la base de datos de dconf ---
+if command -v dconf >/dev/null 2>&1; then
+    dconf update || echo "[LiquidOS] aviso: dconf update falló (se reintentará al iniciar sesión)"
+fi
+
+# --- Menú de GRUB ---
+if command -v update-grub >/dev/null 2>&1; then
+    update-grub || true
+fi

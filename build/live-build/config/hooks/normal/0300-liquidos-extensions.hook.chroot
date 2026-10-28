@@ -1,0 +1,65 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — extensiones de GNOME que dan el aspecto macOS:
+#   · Dash to Dock  → dock inferior con magnificación
+#   · Blur my Shell → translucidez real
+#   · AppIndicator  → iconos de bandeja
+# Si un paquete no existe en el repositorio, se omite sin romper
+# la compilación.
+# ============================================================
+set -uo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -qq || echo "[LiquidOS] aviso: apt-get update falló"
+
+PAQUETES=(
+    gnome-shell-extension-dashtodock
+    gnome-shell-extension-blur-my-shell
+    gnome-shell-extension-appindicator
+    gnome-shell-extension-manager
+)
+
+for pkg in "${PAQUETES[@]}"; do
+    if apt-get install -y -qq --no-install-recommends "$pkg"; then
+        echo "[LiquidOS] extensión instalada: $pkg"
+    else
+        echo "[LiquidOS] aviso: $pkg no disponible; se omite"
+    fi
+done
+
+# Comprobar qué extensiones quedaron realmente instaladas y reescribir
+# la lista de extensiones activas con una sintaxis dconf válida.
+EXT_DIR=/usr/share/gnome-shell/extensions
+DCONF=/etc/dconf/db/local.d/00-liquidos
+
+CANDIDATAS=(
+    dash-to-dock@micxgx.gmail.com
+    blur-my-shell@aunetx
+    appindicatorsupport@rgcjonas.gmail.com
+    user-theme@gnome-shell-extensions.gcampax.github.com
+)
+
+LISTA=""
+for uuid in "${CANDIDATAS[@]}"; do
+    if [ -d "$EXT_DIR/$uuid" ]; then
+        if [ -z "$LISTA" ]; then
+            LISTA="'$uuid'"
+        else
+            LISTA="$LISTA, '$uuid'"
+        fi
+    else
+        echo "[LiquidOS] omitida $uuid (no instalada)"
+    fi
+done
+
+if [ -n "$LISTA" ]; then
+    sed -i "s|^enabled-extensions=.*|enabled-extensions=[$LISTA]|" "$DCONF"
+else
+    sed -i "s|^enabled-extensions=.*|enabled-extensions=[]|" "$DCONF"
+fi
+
+if command -v dconf >/dev/null 2>&1; then
+    dconf update || true
+fi
+
+echo "[LiquidOS] Extensiones listas: ${LISTA:-ninguna}"

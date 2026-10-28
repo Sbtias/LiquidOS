@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Bienvenido a LiquidOS
+Comment=Primeros pasos con LiquidOS
+Exec=liquid-welcome
+Icon=liquidos-logo
+Terminal=false
+Categories=System;Settings;
+Keywords=liquidos;bienvenida;welcome;inicio;
+StartupNotify=true

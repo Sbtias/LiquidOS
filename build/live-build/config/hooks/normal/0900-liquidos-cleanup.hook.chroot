@@ -1,0 +1,26 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — limpieza final de la imagen
+# Reduce tamaño y evita filtrar datos de la máquina de build.
+# ============================================================
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+rm -rf /var/lib/apt/lists/*
+apt-get clean
+
+# Registros de instalación y claves de SSH de la imagen (nunca deben viajar)
+find /var/log -type f -exec truncate -s 0 {} \; 2>/dev/null || true
+rm -f /etc/ssh/ssh_host_* 2>/dev/null || true
+rm -f /etc/machine-id
+touch /etc/machine-id
+
+# Caché de usuario y restos de compilación
+rm -rf /root/.cache /root/.gitconfig /root/.npm /root/.local 2>/dev/null || true
+rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
+
+# Documentación de paquetes (ahorra ~150 MB en la ISO)
+rm -rf /usr/share/doc/* 2>/dev/null || true
+rm -rf /usr/share/man/* 2>/dev/null || true
+
+echo "[LiquidOS] Limpieza completada"

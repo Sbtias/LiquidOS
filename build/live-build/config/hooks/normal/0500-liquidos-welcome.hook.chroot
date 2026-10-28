@@ -1,0 +1,38 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — app de bienvenida
+# Prepara permisos, lanzador y autostart en la primera sesión.
+# ============================================================
+set -euo pipefail
+
+APP_DIR=/usr/share/liquidos/welcome
+chmod 0755 "$APP_DIR/liquid-welcome.py" 2>/dev/null || true
+ln -sf "$APP_DIR/liquid-welcome.py" /usr/bin/liquid-welcome
+chmod 0755 /usr/bin/liquid-welcome
+
+mkdir -p /usr/share/applications /etc/xdg/autostart
+chmod 0644 /usr/share/applications/liquid-welcome.desktop 2>/dev/null || true
+chmod 0644 /etc/xdg/autostart/liquid-welcome.desktop 2>/dev/null || true
+
+# La primera vez que se inicia sesión se marca como visto
+mkdir -p /etc/skel/.config
+cat > /etc/skel/.config/liquidos-welcome <<'EOF'
+[General]
+shown=false
+EOF
+
+# Ocultar el tour de GNOME: LiquidOS tiene su propia bienvenida
+for f in /etc/xdg/autostart/gnome-tour.desktop /usr/share/applications/gnome-tour.desktop; do
+    [ -f "$f" ] || continue
+    if grep -q '^Hidden=' "$f"; then
+        sed -i 's/^Hidden=.*/Hidden=true/' "$f"
+    else
+        printf '\nHidden=true\n' >> "$f"
+    fi
+done
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database /usr/share/applications || true
+fi
+
+echo "[LiquidOS] Bienvenida lista"

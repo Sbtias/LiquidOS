@@ -1,0 +1,19 @@
+# Artefactos de compilación
+dist/
+build/work/
+*.iso
+*.hybrid.iso
+*.sha256
+build.log
+
+# Node / editores
+node_modules/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc

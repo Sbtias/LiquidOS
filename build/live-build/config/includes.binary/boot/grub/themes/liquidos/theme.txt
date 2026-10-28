@@ -1,0 +1,40 @@
+# ============================================================
+# LiquidOS — tema de GRUB para el medio de instalación
+# Se copia a la raíz de la ISO (includes.binary).
+# ============================================================
+
+desktop-color: "#05070c"
+title-text: "LiquidOS 1.0 «Torrente»"
+title-font: "DejaVu Sans Bold 20"
+title-color: "#eef3ff"
+title-height: 70
+
+message-font: "DejaVu Sans Regular 14"
+message-color: "#9aa7c2"
+message-bg-color: "#05070c"
+
+terminal-font: "DejaVu Sans Mono Regular 13"
+
++ boot_menu {
+    left = 12%
+    top = 30%
+    width = 76%
+    height = 44%
+    item_font = "DejaVu Sans Regular 16"
+    item_color = "#8d9bb8"
+    selected_item_color = "#ffffff"
+    item_height = 36
+    item_spacing = 8
+    item_padding = 12
+    scrollbar = false
+}
+
++ label {
+    top = 80%
+    left = 12%
+    width = 76%
+    align = "left"
+    font = "DejaVu Sans Regular 11"
+    color = "#5c6a85"
+    text = "Debian 12 «bookworm» · Software libre · liquidos.example"
+}

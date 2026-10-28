@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Bienvenido a LiquidOS
+Comment=Primeros pasos con LiquidOS
+Exec=liquid-welcome
+Icon=liquidos-logo
+Terminal=false
+OnlyShowIn=GNOME;
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=4

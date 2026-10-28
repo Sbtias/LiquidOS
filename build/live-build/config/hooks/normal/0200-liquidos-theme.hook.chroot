@@ -1,0 +1,103 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — tema visual (macOS-like)
+# Instala WhiteSur (GTK, iconos, cursores) y genera los PNG
+# que necesita Plymouth. Necesita red durante la compilación;
+# si no la hay, cae con elegancia a Adwaita oscuro.
+# ============================================================
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+PLY=/usr/share/plymouth/themes/liquidos
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+echo "[LiquidOS] Generando recursos de arranque"
+
+# ---------- 1. PNG del logo / puntos para Plymouth y GDM ----------
+if command -v rsvg-convert >/dev/null 2>&1; then
+    rsvg-convert -w 160 -h 192 "$PLY/src/liquidos-logo.svg" -o "$PLY/logo.png" || true
+    rsvg-convert -w 20  -h 20  "$PLY/src/dot.svg"           -o "$PLY/dot.png"  || true
+    rsvg-convert -w 240 -h 4   "$PLY/src/bar.svg"           -o "$PLY/bar.png"  || true
+    rsvg-convert -w 44  -h 44  "$PLY/src/knob.svg"          -o "$PLY/knob.png" || true
+    rsvg-convert -w 512 -h 614 "$PLY/src/liquidos-logo.svg" -o /usr/share/pixmaps/liquidos-logo.png || true
+    echo "[LiquidOS] PNG generados con rsvg-convert"
+else
+    echo "[LiquidOS] aviso: falta rsvg-convert; el splash usará solo texto"
+fi
+
+# ---------- 2. Tema GTK / iconos / cursores ----------
+clone() { git clone --depth=1 --quiet "$1" "$2" 2>/dev/null; }
+
+WHITESUR_OK=0
+
+if clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git "$TMP/gtk"; then
+    if [ -x "$TMP/gtk/install.sh" ]; then
+        if ( cd "$TMP/gtk" && ./install.sh \
+                -d /usr/share/themes \
+                -c dark -c light \
+                -t default \
+                --round --shell -i apple -l ); then
+            WHITESUR_OK=1
+        else
+            echo "[LiquidOS] aviso: WhiteSur GTK no se pudo instalar"
+        fi
+    fi
+fi
+
+if clone https://github.com/vinceliuice/WhiteSur-icon-theme.git "$TMP/icons"; then
+    if [ -x "$TMP/icons/install.sh" ]; then
+        ( cd "$TMP/icons" && ./install.sh -d /usr/share/icons -t default ) \
+            || echo "[LiquidOS] aviso: WhiteSur Icons no se pudo instalar"
+    fi
+fi
+
+if clone https://github.com/vinceliuice/WhiteSur-cursors.git "$TMP/cursors"; then
+    if [ -x "$TMP/cursors/install.sh" ]; then
+        # Como root, install.sh instala en /usr/share/icons
+        ( cd "$TMP/cursors" && ./install.sh ) \
+            || echo "[LiquidOS] aviso: WhiteSur Cursors no se pudo instalar"
+        if [ ! -d /usr/share/icons/WhiteSur-cursors ] && [ -d "$TMP/cursors/dist/WhiteSur-cursors" ]; then
+            cp -a "$TMP/cursors/dist/WhiteSur-cursors" /usr/share/icons/
+        fi
+    fi
+fi
+
+# ---------- 3. GTK4 / libadwaita para todos los usuarios ----------
+# `install.sh -l` escribe en $HOME/.config/gtk-4.0 (es decir, /root).
+if [ -d /root/.config/gtk-4.0 ]; then
+    mkdir -p /etc/skel/.config/gtk-4.0
+    cp -a /root/.config/gtk-4.0/. /etc/skel/.config/gtk-4.0/ 2>/dev/null || true
+    rm -rf /root/.config/gtk-4.0
+fi
+
+# ---------- 4. Respaldos si no hubo red ----------
+if [ "$WHITESUR_OK" -ne 1 ] || [ ! -d /usr/share/themes/WhiteSur-Dark ]; then
+    echo "[LiquidOS] aviso: usando Adwaita oscuro como respaldo"
+    D=/etc/dconf/db/local.d/00-liquidos
+    sed -i \
+        -e "s/WhiteSur-Dark/Adwaita-dark/g" \
+        -e "s/WhiteSur-Light/Adwaita/g" \
+        -e "s/WhiteSur-dark/Adwaita/g" \
+        -e "s/WhiteSur-light/Adwaita/g" \
+        -e "s/WhiteSur-cursors/Adwaita/g" \
+        "$D"
+    sed -i \
+        -e "s/gtk-theme-name=WhiteSur-Dark/gtk-theme-name=Adwaita-dark/" \
+        -e "s/gtk-icon-theme-name=WhiteSur-dark/gtk-icon-theme-name=Adwaita/" \
+        -e "s/gtk-cursor-theme-name=WhiteSur-cursors/gtk-cursor-theme-name=Adwaita/" \
+        /etc/skel/.config/gtk-3.0/settings.ini 2>/dev/null || true
+fi
+
+if command -v dconf >/dev/null 2>&1; then
+    dconf update || true
+fi
+
+# ---------- 5. Plymouth (después de generar los PNG) ----------
+# El tema debe entrar en el initramfs junto con logo.png, bar.png,
+# knob.png y dot.png; por eso se aplica al final y no en el hook 0100.
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    plymouth-set-default-theme -R liquidos || true
+fi
+
+echo "[LiquidOS] Tema aplicado"

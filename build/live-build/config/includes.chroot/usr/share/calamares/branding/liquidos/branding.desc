@@ -1,0 +1,27 @@
+# ============================================================
+# LiquidOS — identidad del instalador Calamares
+# ============================================================
+
+componentName: liquidos
+
+strings:
+  productName: LiquidOS
+  shortProductName: LiquidOS
+  version: 1.0
+  shortVersion: "1.0"
+  versionedName: LiquidOS 1.0 «Torrente»
+  shortVersionedName: LiquidOS 1.0
+  bootloaderEntryName: LiquidOS
+  productUrl: https://liquidos.example
+  supportUrl: https://liquidos.example/soporte
+  releaseNotesUrl: https://liquidos.example/notas
+
+images:
+  productLogo: liquidos-logo.svg
+  productIcon: liquidos-logo.svg
+
+style:
+  sidebarBackground: "#0b1020"
+  sidebarText: "#eaf1ff"
+  sidebarTextSelect: "#5aa9ff"
+  sidebarTextHighlight: "#5aa9ff"

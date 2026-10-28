@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2400" viewBox="0 0 3840 2400">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#eef4ff"/>
+      <stop offset="50%" stop-color="#dfe8f8"/>
+      <stop offset="100%" stop-color="#cfdcf2"/>
+    </linearGradient>
+
+    <radialGradient id="p1" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#c9a5ff" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#d8c4ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#d8c4ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="p2" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#8fd8ff" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#b6e6ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#b6e6ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="p3" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#ffc0d4" stop-opacity="0.85"/>
+      <stop offset="65%" stop-color="#ffd6e3" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#ffd6e3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="p4" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#9ff0e0" stop-opacity="0.8"/>
+      <stop offset="65%" stop-color="#c4f7ee" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#c4f7ee" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.8">
+      <stop offset="60%" stop-color="#6b7fa8" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#5a6d94" stop-opacity="0.30"/>
+    </radialGradient>
+
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="150"/>
+    </filter>
+  </defs>
+
+  <rect width="3840" height="2400" fill="url(#base)"/>
+
+  <g filter="url(#soft)">
+    <ellipse cx="960" cy="560" rx="1100" ry="860" fill="url(#p2)"/>
+    <ellipse cx="3120" cy="700" rx="980" ry="820" fill="url(#p1)"/>
+    <ellipse cx="2980" cy="2000" rx="1180" ry="860" fill="url(#p3)"/>
+    <ellipse cx="720" cy="2020" rx="1020" ry="760" fill="url(#p4)"/>
+  </g>
+
+  <g fill="none" stroke="url(#sheen)" stroke-linecap="round" opacity="0.55">
+    <path d="M-200 1420 C 700 1160, 1250 1640, 2060 1420 S 3600 1080, 4100 1360" stroke-width="3"/>
+    <path d="M-200 1520 C 720 1260, 1280 1730, 2100 1510 S 3620 1170, 4100 1440" stroke-width="2"/>
+  </g>
+
+  <rect width="3840" height="2400" fill="url(#vignette)"/>
+</svg>
