@@ -188,9 +188,9 @@ const NETWORKS = [
 const MAILBOXES = {
   inbox: [
     { id: 'm1', from: 'Equipo LiquidOS', subject: 'Bienvenido a la beta de Torrente', when: 'Hoy', unread: true, body: 'Hola:\n\nGracias por probar LiquidOS 1.0 «Torrente». Esta compilación incluye el nuevo splash de arranque, el Dock con magnificación y el Centro de control renovado.\n\nSi encuentras algún fallo, adjunta el resultado de `liquidos-report` en el repositorio.\n\n— El equipo de LiquidOS' },
-    { id: 'm2', from: 'Actualizaciones', subject: 'Tu sistema está al día', when: 'Ayer', unread: false, body: 'Se han instalado 12 actualizaciones de seguridad.\n\nKernel 6.1.0-liquidos-amd64 · GNOME 46 · WhiteSur 2026-10.\nNo es necesario reiniciar.' },
+    { id: 'm2', from: 'Actualizaciones', subject: 'Tu sistema está al día', when: 'Ayer', unread: false, body: 'Se han instalado 12 actualizaciones de seguridad.\n\nKernel 6.1.0-liquidos-amd64 · GNOME 43 · WhiteSur 2026-10.\nNo es necesario reiniciar.' },
     { id: 'm3', from: 'Diseño', subject: 'Nueva paleta para el Dock', when: 'Ayer', unread: false, body: 'Probamos una versión con menos saturación en el cristal del Dock y un indicador de app abierta más discreto.\n\nEl contraste en modo claro sube un 8 %. ¿Lo dejamos así para la 1.0?' },
-    { id: 'm4', from: 'GNOME', subject: 'Notas de la versión 46', when: 'Lun', unread: false, body: 'GNOME 46 llega con mejoras en Nautilus, búsqueda global más rápida y escalado fraccional experimental.\n\nLiquidOS activa `scale-monitor-framebuffer` por defecto.' },
+    { id: 'm4', from: 'GNOME', subject: 'Notas de la versión 46', when: 'Lun', unread: false, body: 'GNOME 43 llega con mejoras en Nautilus, búsqueda global más rápida y escalado fraccional experimental.\n\nLiquidOS activa `scale-monitor-framebuffer` por defecto.' },
     { id: 'm5', from: 'Comunidad', subject: 'Reporte mensual de la distro', when: 'Vie', unread: false, body: 'Este mes: 1 240 descargas de la ISO, 38 incidencias cerradas y 6 nuevas traducciones.\n\nGracias por hacer crecer el proyecto.' }
   ],
   sent: [
@@ -2842,7 +2842,7 @@ function settingsPanel(sec) {
         <div class="ver">Versión 1.0 “Torrente” · edición de desarrollo</div>
         <dl>
           <dt>Base</dt><dd>Debian 12 (bookworm)</dd>
-          <dt>Escritorio</dt><dd>GNOME 46 · LiquidShell</dd>
+          <dt>Escritorio</dt><dd>GNOME 43 · LiquidShell</dd>
           <dt>Kernel</dt><dd>6.1 amd64</dd>
           <dt>Licencia</dt><dd>GPL / MIT</dd>
         </dl>
@@ -2966,7 +2966,7 @@ function wireSettings(win) {
   const copy = $('[data-copy-info]', body);
   if (copy) {
     copy.addEventListener('click', async () => {
-      const info = 'LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 46 · kernel 6.1 amd64';
+      const info = 'LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 43 · kernel 6.1 amd64';
       try {
         await navigator.clipboard.writeText(info);
         toast('Información copiada al portapapeles');
@@ -3209,7 +3209,7 @@ function viewAbout() {
     <div class="ver">Versión 1.0 “Torrente” · edición de desarrollo</div>
     <dl>
       <dt>Base</dt><dd>Debian 12 (bookworm)</dd>
-      <dt>Escritorio</dt><dd>GNOME 46 · LiquidShell</dd>
+      <dt>Escritorio</dt><dd>GNOME 43 · LiquidShell</dd>
       <dt>Kernel</dt><dd>6.1 amd64</dd>
       <dt>Paquetes</dt><dd>~1 850</dd>
       <dt>Licencia</dt><dd>GPL / MIT</dd>
@@ -3269,6 +3269,18 @@ function viewManual() {
     <h3>Apariencia</h3>
     <p>El Centro de control cambia entre modo claro y oscuro, ajusta el brillo y el volumen y activa Wi-Fi, Bluetooth o No molestar. En <b>Ajustes → Escritorio y Dock</b> puedes cambiar el tamaño del Dock y ocultarlo automáticamente.</p>
 
+    <h3>Uso diario</h3>
+    <p><b>Firefox</b> y <b>Thunderbird</b> ya vienen instalados: no hay que descargar nada para navegar o leer el correo. En la barra de Firefox puedes abrir pestañas (+), guardar favoritos con la estrella y consultar el historial. En Thunderbird, el buscador filtra los mensajes al escribir.</p>
+
+    <h3>Centro de software</h3>
+    <p>Abre el <b>Centro de software</b> desde el Dock. Instala, actualiza o quita aplicaciones con la barra de progreso en directo; las que se instalan aparecen también en el menú de aplicaciones. En LiquidOS real el catálogo incluye Debian y Flathub.</p>
+
+    <h3>Terminal</h3>
+    <p>La terminal funciona de verdad dentro de la demo: prueba <b>ls -la</b>, <b>cd Documentos</b>, <b>cat notas-reunion.md</b>, <b>echo hola &gt; saludo.txt</b>, <b>cat saludo.txt | grep hola</b>, <b>sudo apt install vlc</b> o <b>liquidos doctor</b>. Las flechas recorren el historial, <b>Tab</b> completa comandos y <b>Ctrl + L</b> limpia la pantalla.</p>
+
+    <h3>Personalización</h3>
+    <p><b>Ajustes → Personalización</b> reúne el color de acento, seis fondos, la posición del Dock, el tamaño de los iconos del escritorio, el lado de los botones de ventana, las esquinas y la transparencia. Los cambios se guardan en este navegador, así que siguen ahí al recargar.</p>
+
     <h3>Compilar la ISO</h3>
     <p>La imagen se construye con live-build sobre Debian 12. Ejecuta <b>make iso</b> en Linux o usa el flujo de GitHub Actions incluido en el repositorio. El resultado aparece en <b>dist/LiquidOS-1.0-amd64.iso</b>.</p>
 
@@ -3301,7 +3313,7 @@ function wireAux(win) {
   $$('[data-copy-info]', body).forEach((btn) => {
     btn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText('LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 46 · kernel 6.1 amd64');
+        await navigator.clipboard.writeText('LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 43 · kernel 6.1 amd64');
         toast('Información copiada al portapapeles');
       } catch {
         toast('El navegador bloqueó el portapapeles');
