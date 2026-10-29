@@ -239,8 +239,8 @@ sha256sum -c LiquidOS-1.0-amd64.iso.sha256
 En Windows: `Get-Content .\LiquidOS-1.0-amd64.iso.part* -AsByteStream | Set-Content .\LiquidOS-1.0-amd64.iso -AsByteStream`
 y luego `Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256`.
 
-Supabase no aloja la ISO: el plan actual limita cada objeto a 50 MB y una ISO ronda los
-2–3 GB. El binario vive en la release y Supabase guarda el registro que consume la vista
+Supabase no aloja la ISO: el plan actual limita cada objeto a 50 MB y una ISO ronda
+los 3,3 GB. El binario vive en la release y Supabase guarda el registro que consume la vista
 previa. El flujo completo, los secretos y el mantenimiento están en
 [`docs/DESCARGAS.md`](docs/DESCARGAS.md).
 

@@ -59,7 +59,7 @@ Opciones:
   --arch A           arquitectura (defecto: $LIQUIDOS_ARCH o amd64)
   --channel C        canal: stable, beta, nightly… (defecto: stable)
   --notes FICHERO    notas de la versión (texto plano)
-  --source TIPO      release | artifact (defecto: release)
+  --source TIPO      release | artifact | storage (defecto: release)
   --run-url URL      página del run de Actions (para --source artifact)
   --download-url URL URL pública del binario
   --part URL         URL de una parte (si la ISO supera 2 GiB)
