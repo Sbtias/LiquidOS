@@ -223,11 +223,21 @@ Las ISO se publican en **[GitHub Releases](https://github.com/Sbtias/LiquidOS/re
 Cada versión se registra además en Supabase (tabla pública `liquidos_releases`) con su
 tamaño y SHA-256, y el manifiesto se sirve desde el bucket público `liquidos`.
 
+GitHub limita cada archivo de una release a **2 GiB** y la ISO ronda los 3,3 GB, así que
+se publica **dividida en partes** (`…iso.part01`, `…iso.part02`) junto a un
+`LEEME-descarga.txt`. La vista previa muestra un botón por parte.
+
 ```bash
+# Archivo único
+sha256sum -c LiquidOS-1.0-amd64.iso.sha256
+
+# Por partes: únelas en orden y verifica la ISO completa
+cat LiquidOS-1.0-amd64.iso.part* > LiquidOS-1.0-amd64.iso
 sha256sum -c LiquidOS-1.0-amd64.iso.sha256
 ```
 
-En Windows: `Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256`.
+En Windows: `Get-Content .\LiquidOS-1.0-amd64.iso.part* -AsByteStream | Set-Content .\LiquidOS-1.0-amd64.iso -AsByteStream`
+y luego `Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256`.
 
 Supabase no aloja la ISO: el plan actual limita cada objeto a 50 MB y una ISO ronda los
 2–3 GB. El binario vive en la release y Supabase guarda el registro que consume la vista

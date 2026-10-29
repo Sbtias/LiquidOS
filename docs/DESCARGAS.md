@@ -10,7 +10,7 @@ registro y los checksums están en Supabase y la ISO en GitHub Releases.**
 
 | Pieza | Dónde | Por qué |
 |---|---|---|
-| ISO (`LiquidOS-1.0-amd64.iso`) | [GitHub Releases](https://github.com/Sbtias/LiquidOS/releases) | Sin límite práctico de tamaño y con CDN de GitHub |
+| ISO (`LiquidOS-1.0-amd64.iso`) | [GitHub Releases](https://github.com/Sbtias/LiquidOS/releases) | CDN gratis; si supera 2 GiB se publica en partes |
 | Registro de versiones | Supabase · `public.liquidos_releases` | Una sola fuente de verdad para la web y la vista previa |
 | Manifiesto JSON | Supabase Storage · bucket `liquidos` | Datos estructurados de la versión |
 | `SHA256SUMS` | Supabase Storage · bucket `liquidos` | Verificación independiente del binario |
@@ -43,6 +43,28 @@ Si algún día el proyecto admite ISO en Storage, el script ya tiene
 `--upload-iso`: solo sube el binario cuando cabe en el límite y guarda su ruta
 en `storage_path`.
 
+### 2.1 Límite de 2 GiB y descarga por partes
+
+GitHub Releases acepta como máximo **2 GiB por archivo**. Una ISO Debian con
+GNOME, LibreOffice y las apps de LiquidOS ronda los 3–3,5 GB, así que el flujo
+la divide automáticamente:
+
+```text
+LiquidOS-1.0-amd64.iso.part01   (1,9 GB)
+LiquidOS-1.0-amd64.iso.part02   (resto)
+LiquidOS-1.0-amd64.iso.sha256
+LEEME-descarga.txt
+```
+
+- El paso **«Preparar la descarga»** usa `split -b 1900M` cuando el archivo
+  supera `2 000 000 000` bytes y genera el `LEEME`.
+- La release sube las partes, la suma y el `LEEME`.
+- Supabase guarda las URLs en `parts` (array JSON). La vista previa muestra
+  un botón «Parte 1», «Parte 2»… y el enlace a la release.
+- El SHA-256 es de la ISO completa: únelas antes de comprobarlo.
+
+Si en el futuro la ISO baja de 2 GiB, el flujo vuelve solo al archivo único.
+
 ---
 
 ## 3. Estructura en Supabase
@@ -62,6 +84,7 @@ en `storage_path`.
 | `notes` | `text` | Notas de la versión |
 | `source` | `text` | `release`, `artifact` o `storage` |
 | `run_url` | `text` | Página del run de Actions |
+| `parts` | `jsonb` | URLs de las partes si la ISO supera 2 GiB (`[]` si es única) |
 | `is_current` | `boolean` | Versión actual del canal |
 | `created_at` / `updated_at` | `timestamptz` | Fechas |
 
@@ -125,7 +148,7 @@ scripts/publicar-descarga.sh dist/LiquidOS-1.0-amd64.iso \
 
 El script:
 
-1. Valida versión, canal y arquitectura.
+1. Valida versión, canal, arquitectura y URLs.
 2. Calcula `size_bytes` y `sha256`.
 3. Sube `releases/<canal>/<versión>.json` y `SHA256SUMS`.
 4. Desmarca la versión anterior del canal.
@@ -138,11 +161,27 @@ Opciones útiles:
 --notes FICHERO     notas de la versión (máx. 2000 caracteres)
 --source TIPO       release | artifact | storage
 --run-url URL       página del run de Actions
+--part URL          URL de una parte (repetible; ISO de más de 2 GiB)
+--download-url URL  URL pública del binario o de la página de la release
 --upload-iso        sube también la ISO si cabe en el bucket
 --skip-storage      solo actualiza la tabla
 --dry-run           no hace peticiones de red
 --check             prueba la conexión y lista versiones
 ```
+
+Si la ISO está dividida, `--download-url` suele ser la página de la release y
+cada `--part` apunta a su archivo:
+
+```bash
+scripts/publicar-descarga.sh dist/LiquidOS-1.0-amd64.iso \
+  --version 1.0 \
+  --download-url "https://github.com/Sbtias/LiquidOS/releases/tag/v1.0" \
+  --part "https://github.com/Sbtias/LiquidOS/releases/download/v1.0/LiquidOS-1.0-amd64.iso.part01" \
+  --part "https://github.com/Sbtias/LiquidOS/releases/download/v1.0/LiquidOS-1.0-amd64.iso.part02"
+```
+
+Sin `--download-url`, el script enlaza a la release cuando hay partes. Las URLs
+deben ser `http(s)`; se validan antes de escribir nada en Supabase.
 
 ### Desde GitHub Actions
 
@@ -165,11 +204,12 @@ Comportamiento:
 - **Push a `main` o ejecución manual** → `source = artifact` y el enlace apunta
   al run de Actions (el artefacto se descarga desde allí).
 - **Etiqueta `v*` o release publicada** → `source = release` y el enlace apunta
-  al asset de GitHub Releases.
+  al asset de GitHub Releases (o a la página de la release si hay partes). Las
+  partes se suben y se registran en `parts`.
 - Si `SUPABASE_URL` no está definido, el paso se omite.
 - El paso tiene `continue-on-error: true`: un fallo de Supabase **no invalida**
   la ISO ya construida.
-- El resumen del run incluye la versión y el enlace publicado.
+- El resumen del run incluye la versión, si se dividió y el enlace publicado.
 
 Para una release completa:
 
@@ -184,6 +224,8 @@ El flujo construye la ISO, la adjunta a la release y la registra en Supabase.
 
 ## 5. Verificar una descarga
 
+### Archivo único
+
 ```bash
 # Descarga la ISO y su suma desde la release
 curl -LO https://github.com/Sbtias/LiquidOS/releases/download/v1.0/LiquidOS-1.0-amd64.iso
@@ -192,7 +234,29 @@ curl -LO https://github.com/Sbtias/LiquidOS/releases/download/v1.0/LiquidOS-1.0-
 sha256sum -c LiquidOS-1.0-amd64.iso.sha256
 ```
 
-En Windows:
+### Descarga por partes
+
+Descarga todas las partes y el `.sha256` de la release, únelas **en orden** y
+comprueba la suma de la ISO completa:
+
+```bash
+# Linux / macOS
+cat LiquidOS-1.0-amd64.iso.part* > LiquidOS-1.0-amd64.iso
+sha256sum -c LiquidOS-1.0-amd64.iso.sha256
+```
+
+```powershell
+# Windows PowerShell 5.1+
+Get-Content .\LiquidOS-1.0-amd64.iso.part* -AsByteStream |
+  Set-Content .\LiquidOS-1.0-amd64.iso -AsByteStream
+Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256
+```
+
+El orden alfabético de `part01`, `part02`… es el correcto porque el flujo usa
+`split -d -a 2 --numeric-suffixes=1`. Compara el resultado con el valor de
+`sha256` en Supabase o con el archivo `.sha256`.
+
+### Archivo único (Windows)
 
 ```powershell
 Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256
@@ -219,7 +283,7 @@ política de lectura. **Nunca** publiques la clave `service_role`.
 - Ordena por `is_current` y fecha, y limita a 20 versiones.
 - Cachea la respuesta 60 segundos.
 - Devuelve `{ ok, configured, releases[] }` con `downloadUrl`,
-  `manifestUrl`, `sha256`, `size`, `source` y `runUrl`.
+  `manifestUrl`, `sha256`, `size`, `source`, `runUrl` y `parts`.
 - Si Supabase no responde, la app muestra el error y el enlace a GitHub
   Releases; no inventa descargas.
 

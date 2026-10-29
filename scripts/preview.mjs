@@ -690,6 +690,9 @@ function releaseJson(row) {
     source: String(row.source || 'release'),
     runUrl: cleanUrl(row.run_url),
     notes: String(row.notes || ''),
+    parts: Array.isArray(row.parts)
+      ? row.parts.map(cleanUrl).filter(Boolean)
+      : [],
     current: Boolean(row.is_current),
     createdAt: String(row.created_at || ''),
     manifestUrl: version
@@ -705,7 +708,7 @@ async function fetchDownloads() {
 
   const select = [
     'version', 'channel', 'iso_name', 'size_bytes', 'sha256',
-    'download_url', 'source', 'run_url', 'notes', 'is_current', 'created_at'
+    'download_url', 'source', 'run_url', 'notes', 'parts', 'is_current', 'created_at'
   ].join(',');
 
   const ctrl = new AbortController();

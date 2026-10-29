@@ -110,6 +110,39 @@ jobs:
           ls -lh dist/
           cat dist/*.sha256
 
+      - name: Preparar la descarga (partes si supera 2 GiB)
+        id: assets
+        run: |
+          set -euo pipefail
+          iso=$(find dist -maxdepth 1 -name '*.iso' -print -quit)
+          [ -n "$iso" ] || { echo "No se encontró ninguna ISO en dist/"; exit 1; }
+          size=$(stat -c%s "$iso")
+          split=false
+          if [ "$size" -ge 2000000000 ]; then
+            split=true
+            rm -f "${iso}.part"*
+            split -b 1900M -d -a 2 --numeric-suffixes=1 "$iso" "${iso}.part"
+            name=$(basename "$iso")
+            {
+              echo "LiquidOS se distribuye en partes porque la ISO supera el límite de 2 GiB"
+              echo "por archivo de GitHub Releases."
+              echo
+              echo "Únelas en orden y comprueba la suma:"
+              echo
+              echo "  cat ${name}.part* > ${name}"
+              echo "  sha256sum -c ${name}.sha256"
+              echo
+              echo "En Windows (PowerShell):"
+              echo
+              echo "  Get-Content ${name}.part* -AsByteStream |"
+              echo "    Set-Content ${name} -AsByteStream"
+              echo
+              echo "Después puedes montar la ISO o grabarla con Rufus en modo DD."
+            } > dist/LEEME-descarga.txt
+          fi
+          echo "split=$split" >> "$GITHUB_OUTPUT"
+          echo "ISO: $size bytes · partes: $split"
+
       - name: Publicar la descarga en Supabase
         id: publicar
         # Solo si el repositorio tiene configurado SUPABASE_URL.
@@ -125,9 +158,20 @@ jobs:
           source="artifact"
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           download_url="$run_url"
+          parts=()
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             source="release"
-            download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$iso")"
+            if [[ "${{ steps.assets.outputs.split }}" == "true" ]]; then
+              download_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+              for p in dist/*.part*; do
+                parts+=(
+                  --part
+                  "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$p")"
+                )
+              done
+            else
+              download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$iso")"
+            fi
           fi
           args=(
             "$iso"
@@ -135,9 +179,10 @@ jobs:
             --arch "$LIQUIDOS_ARCH"
             --source "$source"
             --run-url "$run_url"
+            --download-url "$download_url"
           )
-          if [[ -n "$download_url" ]]; then
-            args+=(--download-url "$download_url")
+          if [ "${#parts[@]}" -gt 0 ]; then
+            args+=("${parts[@]}")
           fi
           bash scripts/publicar-descarga.sh "${args[@]}"
           {
@@ -145,6 +190,7 @@ jobs:
             echo ""
             echo "- Versión: \`${LIQUIDOS_VERSION}\`"
             echo "- Binario: $download_url"
+            echo "- Partes: ${{ steps.assets.outputs.split }}"
             echo "- Registro: Supabase · \`public.liquidos_releases\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -165,4 +211,7 @@ jobs:
           files: |
             dist/*.iso
             dist/*.sha256
+            dist/*.part*
+            dist/LEEME-descarga.txt
+          fail_on_unmatched_files: false
           generate_release_notes: true

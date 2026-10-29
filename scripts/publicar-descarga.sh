@@ -44,6 +44,7 @@ MAX_BYTES="${LIQUIDOS_SUPABASE_MAX_BYTES:-52428800}"
 
 ISO=""
 NOTES_FILE=""
+PARTS=()
 DRY_RUN=0
 UPLOAD_ISO=0
 SKIP_STORAGE=0
@@ -61,6 +62,7 @@ Opciones:
   --source TIPO      release | artifact (defecto: release)
   --run-url URL      página del run de Actions (para --source artifact)
   --download-url URL URL pública del binario
+  --part URL         URL de una parte (si la ISO supera 2 GiB)
   --upload-iso       sube también la ISO si cabe en el bucket
   --skip-storage     no sube manifiesto ni sumas (solo la tabla)
   --timeout S        timeout de cada petición (defecto: 60)
@@ -82,6 +84,7 @@ while [ $# -gt 0 ]; do
     --source) SOURCE="${2:-}"; SOURCE_SET=1; shift 2 ;;
     --run-url) RUN_URL="${2:-}"; shift 2 ;;
     --download-url) DOWNLOAD_URL="${2:-}"; DOWNLOAD_URL_SET=1; shift 2 ;;
+    --part) PARTS+=("${2:-}"); shift 2 ;;
     --bucket) BUCKET="${2:-}"; shift 2 ;;
     --repo) REPO="${2:-}"; shift 2 ;;
     --upload-iso) UPLOAD_ISO=1; shift ;;
@@ -162,6 +165,9 @@ if [ -n "$ISO" ]; then
   fi
 fi
 
+if [ -z "$DOWNLOAD_URL" ] && [ "${#PARTS[@]}" -gt 0 ]; then
+  DOWNLOAD_URL="https://github.com/$REPO/releases/tag/v$VERSION"
+fi
 if [ -z "$DOWNLOAD_URL" ]; then
   if [ "$SOURCE" = "artifact" ]; then
     DOWNLOAD_URL="${RUN_URL:-https://github.com/$REPO/actions}"
@@ -172,6 +178,11 @@ fi
 [[ "$DOWNLOAD_URL" =~ ^https?:// ]] || fail "download_url no es una URL http(s): $DOWNLOAD_URL"
 if [ -n "$RUN_URL" ] && [[ ! "$RUN_URL" =~ ^https?:// ]]; then
   fail "run_url no es una URL http(s): $RUN_URL"
+fi
+if [ "${#PARTS[@]}" -gt 0 ]; then
+  for part in "${PARTS[@]}"; do
+    [[ "$part" =~ ^https?:// ]] || fail "parte no válida (se esperaba http(s)): $part"
+  done
 fi
 
 NOTES=""
@@ -194,6 +205,14 @@ size_json="null"; [ -n "$SIZE" ] && size_json="$SIZE"
 sha_json="null"; [ -n "$SHA" ] && sha_json="$(json_string "$SHA")"
 run_json="null"; [ -n "$RUN_URL" ] && run_json="$(json_string "$RUN_URL")"
 storage_json="null"
+parts_json='[]'
+if [ "${#PARTS[@]}" -gt 0 ]; then
+  parts_json=''
+  for part in "${PARTS[@]}"; do
+    parts_json+="$(json_string "$part"),"
+  done
+  parts_json="[${parts_json%,}]"
+fi
 
 if [ "$UPLOAD_ISO" -eq 1 ] && [ -n "$ISO" ] && [ -n "$SIZE" ]; then
   if [ "$SIZE" -le "$MAX_BYTES" ]; then
@@ -207,7 +226,7 @@ if [ "$UPLOAD_ISO" -eq 1 ] && [ -n "$ISO" ] && [ -n "$SIZE" ]; then
   fi
 fi
 
-payload=$(printf '{"version":%s,"channel":%s,"iso_name":%s,"size_bytes":%s,"sha256":%s,"download_url":%s,"storage_path":%s,"notes":%s,"source":%s,"run_url":%s,"is_current":true}' \
+payload=$(printf '{"version":%s,"channel":%s,"iso_name":%s,"size_bytes":%s,"sha256":%s,"download_url":%s,"storage_path":%s,"notes":%s,"source":%s,"run_url":%s,"parts":%s,"is_current":true}' \
   "$(json_string "$VERSION")" \
   "$(json_string "$CHANNEL")" \
   "$(json_string "$ISO_NAME")" \
@@ -217,7 +236,8 @@ payload=$(printf '{"version":%s,"channel":%s,"iso_name":%s,"size_bytes":%s,"sha2
   "$storage_json" \
   "$(json_string "$NOTES")" \
   "$(json_string "$SOURCE")" \
-  "$run_json")
+  "$run_json" \
+  "$parts_json")
 
 manifest_url="$SUPABASE_URL/storage/v1/object/public/$BUCKET/releases/$CHANNEL/$VERSION.json"
 
@@ -255,7 +275,7 @@ if [ "$SKIP_STORAGE" -eq 0 ]; then
   log "Subiendo el manifiesto"
   manifest_url=$(upload_object "$TMP/manifest.json" "releases/$CHANNEL/$VERSION.json" "application/json")
   log "Subiendo SHA256SUMS"
-  upload_object "$TMP/SHA256SUMS" "releases/$CHANNEL/$VERSION/SHA256SUMS" "text/plain; charset=utf-8" >/dev/null
+  upload_object "$TMP/SHA256SUMS" "releases/$CHANNEL/$VERSION/SHA256SUMS" "text/plain" >/dev/null
   if [ "$storage_json" != "null" ] && [ -n "$ISO" ]; then
     log "Subiendo la ISO al bucket (esto puede tardar)"
     upload_object "$ISO" "releases/$CHANNEL/$VERSION/$ISO_NAME" "application/x-iso9660-image" >/dev/null

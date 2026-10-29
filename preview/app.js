@@ -1142,6 +1142,7 @@ function downloadRowHtml(r) {
     ? date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
     : '';
   const name = r.name || `LiquidOS-${r.version}-amd64.iso`;
+  const parts = Array.isArray(r.parts) ? r.parts : [];
   const badge = r.current
     ? '<span class="dl-badge on">actual</span>'
     : `<span class="dl-badge">${escapeHtml(r.channel)}</span>`;
@@ -1150,11 +1151,12 @@ function downloadRowHtml(r) {
     <span class="mini app-icon" style="--c1:#b8c6db;--c2:#7d8ba1">${icons('download')}</span>
     <span class="dl-info">
       <b>${escapeHtml(name)} ${badge}</b>
-      <small>${escapeHtml(r.version)} · ${escapeHtml(r.channel)} · ${formatBytes(r.size)}${when ? ` · ${escapeHtml(when)}` : ''}</small>
+      <small>${escapeHtml(r.version)} · ${escapeHtml(r.channel)} · ${formatBytes(r.size)}${when ? ` · ${escapeHtml(when)}` : ''}${parts.length ? ` · ${parts.length} partes` : ''}</small>
       ${r.sha256 ? `<code title="${escapeHtml(r.sha256)}">${escapeHtml(r.sha256.slice(0, 16))}…</code>` : ''}
     </span>
     <span class="dl-actions">
-      ${r.downloadUrl ? `<a class="btn primary" href="${escapeHtml(r.downloadUrl)}" target="_blank" rel="noopener">Descargar</a>` : ''}
+      ${r.downloadUrl ? `<a class="btn primary" href="${escapeHtml(r.downloadUrl)}" target="_blank" rel="noopener">${parts.length ? 'Ver release' : 'Descargar'}</a>` : ''}
+      ${parts.map((part, i) => `<a class="btn" href="${escapeHtml(part)}" target="_blank" rel="noopener">Parte ${i + 1}</a>`).join('')}
       ${r.sha256 ? `<button class="btn" data-copy-sha="${escapeHtml(r.sha256)}">Copiar suma</button>` : ''}
       ${r.manifestUrl ? `<a class="btn" href="${escapeHtml(r.manifestUrl)}" target="_blank" rel="noopener">Manifiesto</a>` : ''}
       ${r.runUrl ? `<a class="btn" href="${escapeHtml(r.runUrl)}" target="_blank" rel="noopener">Run</a>` : ''}
@@ -1282,6 +1284,7 @@ function browserPageHtml(id, b) {
       ${d.error ? `<div class="dl-note warn"><b>No se pudo consultar el registro</b><span>${escapeHtml(d.error)}</span></div>` : ''}
       ${loading ? `<div class="dl-loading"><span class="web-spinner"></span><span>Consultando Supabase…</span></div>` : ''}
       ${rows.length ? `<div class="dl-list">${rows.map(downloadRowHtml).join('')}</div>` : ''}
+      ${rows.some((r) => Array.isArray(r.parts) && r.parts.length) ? `<div class="dl-note"><b>Descarga por partes</b><span>Une los archivos en orden: <code>cat LiquidOS-*.iso.part* &gt; LiquidOS.iso</code> y verifica el SHA-256. En Windows, usa <code>Get-Content</code> con <code>-AsByteStream</code> (ver LEEME).</span></div>` : ''}
       ${!loading && !rows.length ? `<div class="finder-empty">${d.error ? 'Mientras tanto puedes bajar la última versión desde GitHub Releases.' : 'Todavía no hay versiones registradas. La primera ISO aparecerá aquí al publicarla.'}</div>` : ''}
       <div class="dl-note"><b>Verifica siempre la descarga</b><span>Compara el SHA-256 con el manifiesto: <code>sha256sum LiquidOS-*.iso</code>.</span></div>
       <div class="dl-links">
