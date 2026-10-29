@@ -71,7 +71,6 @@ gnome-software-plugin-flatpak
 flatpak
 packagekit
 packagekit-tools
-packagekit-backend-aptcc
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 gdm3
@@ -127,9 +126,9 @@ gir1.2-adw-1
 # Navegador y correo vienen preinstalados: no hace falta instalar nada
 # para navegar, leer el correo o trabajar.
 firefox-esr
-firefox-esr-l10n-es
+firefox-esr-l10n-es-es
 thunderbird
-thunderbird-l10n-es
+thunderbird-l10n-es-es
 libreoffice-gtk3
 libreoffice-writer
 libreoffice-calc
