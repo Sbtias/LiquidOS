@@ -1,10 +1,12 @@
 /* ============================================================
    LiquidOS — escritorio de demostración (vista previa web)
    Simula el shell de LiquidOS: barra de menús, Dock, ventanas,
-   Spotlight y Centro de control.
+   Spotlight, Centro de control y todas las apps de muestra.
+   Todos los controles están conectados a una acción real.
    ============================================================ */
 
 const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 /* ---------------------------- Glifos ---------------------------- */
 
@@ -26,54 +28,293 @@ const GLYPHS = {
   clock: '<circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.4V12l3.2 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   tag: '<path d="M11.4 3.8H20v8.6l-8.6 8.6-8.6-8.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16.2" cy="7.6" r="1.4" fill="currentColor"/>',
   chevron: '<path d="M9 5.6 15.4 12 9 18.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
-  wifi: '<path d="M2 6.4a15 15 0 0 1 20 0M5.4 9.8a10 10 0 0 1 13.2 0M8.7 13.2a5.5 5.5 0 0 1 6.6 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1.4" fill="currentColor"/>'
+  wifi: '<path d="M2 6.4a15 15 0 0 1 20 0M5.4 9.8a10 10 0 0 1 13.2 0M8.7 13.2a5.5 5.5 0 0 1 6.6 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1.4" fill="currentColor"/>',
+  back: '<path d="M14.6 5.4 8 12l6.6 6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  forward: '<path d="M9.4 5.4 16 12l-6.6 6.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+  reload: '<path d="M19.4 12a7.4 7.4 0 1 1-2.3-5.3M19.4 5.2v4.4h-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  play: '<path d="M8.4 5.4v13.2L19 12z" fill="currentColor"/>',
+  pause: '<rect x="7" y="5.4" width="3.6" height="13.2" rx="1.1" fill="currentColor"/><rect x="13.4" y="5.4" width="3.6" height="13.2" rx="1.1" fill="currentColor"/>',
+  prev: '<path d="M6.6 5.4v13.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M18.4 6.2v11.6L8.8 12z" fill="currentColor"/>',
+  next: '<path d="M17.4 5.4v13.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M5.6 6.2v11.6L15.2 12z" fill="currentColor"/>',
+  volume: '<path d="M4 9.4h3.2L12 5.6v12.8L7.2 14.6H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15.2 9.2a4 4 0 0 1 0 5.6M17.6 6.8a7.4 7.4 0 0 1 0 10.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  lock: '<rect x="5.4" y="10.4" width="13.2" height="9.4" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.4 10.4V8a3.6 3.6 0 0 1 7.2 0v2.4" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  check: '<path d="m5 12.6 4.4 4.4L19 6.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  send: '<path d="M4 12 20 4l-4 16-4.4-6.4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+  reply: '<path d="M9.6 6 4 11.4 9.6 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 11.4h8.4a6 6 0 0 1 6 6v1.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  moon: '<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.6 8.6 0 1 0 20.5 14.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
+  bell: '<path d="M6 16V10a6 6 0 0 1 12 0v6l2 2H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  plus: '<path d="M12 5.4v13.2M5.4 12h13.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+  power: '<path d="M12 3.6v8M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  grid: '<rect x="4" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/>'
 };
 
 const svg = (name, extra = '') =>
   `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}>${GLYPHS[name] || ''}</svg>`;
 
+const icons = (name) => svg(name);
+
 /* ---------------------------- Apps ---------------------------- */
 
 const APPS = [
-  { id: 'archivos',  name: 'Archivos',       glyph: 'folder',   c1: '#6fc0ff', c2: '#1a6fe0', w: 830, h: 520 },
-  { id: 'navegador', name: 'Navegador',      glyph: 'globe',    c1: '#63e6dd', c2: '#0b8f96', w: 880, h: 560 },
-  { id: 'correo',    name: 'Correo',         glyph: 'mail',     c1: '#8ec5ff', c2: '#2b6fe8', w: 760, h: 500 },
-  { id: 'notas',     name: 'Notas',          glyph: 'notes',    c1: '#ffe27a', c2: '#f0a51e', w: 720, h: 470 },
-  { id: 'musica',    name: 'Música',         glyph: 'music',    c1: '#ff8fb1', c2: '#c2185b', w: 680, h: 430 },
-  { id: 'terminal',  name: 'Terminal',       glyph: 'terminal', c1: '#4b5262', c2: '#171a22', w: 700, h: 430 },
-  { id: 'ajustes',   name: 'Ajustes',        glyph: 'settings', c1: '#c9d1e0', c2: '#7d8798', w: 780, h: 560 }
+  { id: 'archivos',  name: 'Archivos',  glyph: 'folder',   c1: '#6fc0ff', c2: '#1a6fe0', w: 830, h: 520 },
+  { id: 'navegador', name: 'Navegador', glyph: 'globe',    c1: '#63e6dd', c2: '#0b8f96', w: 880, h: 560 },
+  { id: 'correo',    name: 'Correo',    glyph: 'mail',     c1: '#8ec5ff', c2: '#2b6fe8', w: 760, h: 500 },
+  { id: 'notas',     name: 'Notas',     glyph: 'notes',    c1: '#ffe27a', c2: '#f0a51e', w: 720, h: 470 },
+  { id: 'musica',    name: 'Música',    glyph: 'music',    c1: '#ff8fb1', c2: '#c2185b', w: 680, h: 470 },
+  { id: 'terminal',  name: 'Terminal',  glyph: 'terminal', c1: '#4b5262', c2: '#171a22', w: 700, h: 430 },
+  { id: 'ajustes',   name: 'Ajustes',   glyph: 'settings', c1: '#c9d1e0', c2: '#7d8798', w: 780, h: 560 }
 ];
 
 const byId = Object.fromEntries(APPS.map((a) => [a.id, a]));
 
+/* -------------------- Sistema de archivos (demo) -------------------- */
+
+const FS = {
+  inicio: {
+    label: 'Inicio',
+    items: [
+      { name: 'Documentos', type: 'folder', to: 'documentos', cls: 'folder-doc' },
+      { name: 'Imágenes', type: 'folder', to: 'imagenes', cls: 'folder-img' },
+      { name: 'Música', type: 'folder', to: 'musica', cls: 'folder-mus' },
+      { name: 'Descargas', type: 'folder', to: 'descargas' },
+      { name: 'Proyectos', type: 'folder', to: 'proyectos', cls: 'folder-doc' },
+      { name: 'Capturas', type: 'folder', to: 'capturas', cls: 'folder-img' },
+      { name: 'Escritorio', type: 'folder', to: 'escritorio' },
+      { name: 'Vídeos', type: 'folder', to: 'videos', cls: 'folder-img' },
+      { name: 'bienvenida.txt', type: 'doc', meta: '2 KB' }
+    ]
+  },
+  documentos: {
+    label: 'Documentos',
+    items: [
+      { name: 'notas-reunion.md', type: 'doc', meta: '6 KB', important: true },
+      { name: 'manual-liquidos.pdf', type: 'pkg', meta: '1,8 MB' },
+      { name: 'presupuesto.ods', type: 'pkg', meta: '48 KB' },
+      { name: 'capturas', type: 'folder', to: 'capturas', cls: 'folder-img' }
+    ]
+  },
+  imagenes: {
+    label: 'Imágenes',
+    items: [
+      { name: 'fondo-oscuro.png', type: 'img', meta: '1,2 MB' },
+      { name: 'fondo-claro.png', type: 'img', meta: '1,1 MB' },
+      { name: 'captura-escritorio.png', type: 'img', meta: '820 KB', important: true },
+      { name: 'detalle-dock.png', type: 'img', meta: '410 KB' }
+    ]
+  },
+  musica: {
+    label: 'Música',
+    items: [
+      { name: 'oceano-de-datos.mp3', type: 'aud', meta: '3:42' },
+      { name: 'vidrio-templado.mp3', type: 'aud', meta: '4:10' },
+      { name: 'marea-lenta.mp3', type: 'aud', meta: '2:58' }
+    ]
+  },
+  descargas: {
+    label: 'Descargas',
+    items: [
+      { name: 'LiquidOS-1.0-amd64.iso', type: 'pkg', meta: '2,4 GB', important: true },
+      { name: 'liquidos-1.0-amd64.iso.sha256', type: 'doc', meta: '96 B' },
+      { name: 'build.log', type: 'doc', meta: '312 KB' },
+      { name: 'captura-arranque.png', type: 'img', meta: '300 KB' }
+    ]
+  },
+  proyectos: {
+    label: 'Proyectos',
+    items: [
+      { name: 'liquidos', type: 'folder', to: 'liquidos', cls: 'folder-doc' },
+      { name: 'ideas.md', type: 'doc', meta: '4 KB', important: true },
+      { name: 'paleta.svg', type: 'img', meta: '12 KB' }
+    ]
+  },
+  liquidos: {
+    label: 'Proyectos / liquidos',
+    items: [
+      { name: 'README.md', type: 'doc', meta: '8 KB' },
+      { name: 'preview', type: 'folder', to: 'inicio', cls: 'folder-doc' },
+      { name: 'docs', type: 'folder', to: 'proyectos', cls: 'folder-doc' }
+    ]
+  },
+  capturas: {
+    label: 'Capturas',
+    items: [
+      { name: 'escritorio-oscuro.png', type: 'img', meta: '293 KB' },
+      { name: 'escritorio-claro.png', type: 'img', meta: '438 KB' },
+      { name: 'spotlight.png', type: 'img', meta: '245 KB' },
+      { name: 'arranque.png', type: 'img', meta: '307 KB' }
+    ]
+  },
+  escritorio: { label: 'Escritorio', items: [] },
+  videos: { label: 'Vídeos', items: [] },
+  importante: {
+    label: 'Importante',
+    items: [
+      { name: 'notas-reunion.md', type: 'doc', meta: '6 KB' },
+      { name: 'captura-escritorio.png', type: 'img', meta: '820 KB' },
+      { name: 'LiquidOS-1.0-amd64.iso', type: 'pkg', meta: '2,4 GB' },
+      { name: 'ideas.md', type: 'doc', meta: '4 KB' }
+    ]
+  }
+};
+
+/* ---------------------------- Música ---------------------------- */
+
+const MUSIC_TRACKS = [
+  { title: 'Océano de datos', artist: 'Liquid Sound', album: 'Ambiente', dur: '3:42', sec: 222 },
+  { title: 'Vidrio templado', artist: 'Liquid Sound', album: 'Ambiente', dur: '4:10', sec: 250 },
+  { title: 'Marea lenta', artist: 'Nocturno', album: 'Nocturno', dur: '2:58', sec: 178 },
+  { title: 'Azul profundo', artist: 'Nocturno', album: 'Nocturno', dur: '5:06', sec: 306 },
+  { title: 'Destello', artist: 'Liquid Sound', album: 'Destello', dur: '3:21', sec: 201 }
+];
+
+/* ---------------------------- Redes ---------------------------- */
+
+const NETWORKS = [
+  { name: 'liquido-5G', lock: true, signal: 3, known: true },
+  { name: 'Casa-2.4', lock: true, signal: 2, known: true },
+  { name: 'Vecino_5G', lock: true, signal: 2, known: false },
+  { name: 'LiquidOS-Invitados', lock: false, signal: 3, known: false }
+];
+
+/* ---------------------------- Correo ---------------------------- */
+
+const MAILBOXES = {
+  inbox: [
+    { id: 'm1', from: 'Equipo LiquidOS', subject: 'Bienvenido a la beta de Torrente', when: 'Hoy', unread: true, body: 'Hola:\n\nGracias por probar LiquidOS 1.0 «Torrente». Esta compilación incluye el nuevo splash de arranque, el Dock con magnificación y el Centro de control renovado.\n\nSi encuentras algún fallo, adjunta el resultado de `liquidos-report` en el repositorio.\n\n— El equipo de LiquidOS' },
+    { id: 'm2', from: 'Actualizaciones', subject: 'Tu sistema está al día', when: 'Ayer', unread: false, body: 'Se han instalado 12 actualizaciones de seguridad.\n\nKernel 6.1.0-liquidos-amd64 · GNOME 46 · WhiteSur 2026-10.\nNo es necesario reiniciar.' },
+    { id: 'm3', from: 'Diseño', subject: 'Nueva paleta para el Dock', when: 'Ayer', unread: false, body: 'Probamos una versión con menos saturación en el cristal del Dock y un indicador de app abierta más discreto.\n\nEl contraste en modo claro sube un 8 %. ¿Lo dejamos así para la 1.0?' },
+    { id: 'm4', from: 'GNOME', subject: 'Notas de la versión 46', when: 'Lun', unread: false, body: 'GNOME 46 llega con mejoras en Nautilus, búsqueda global más rápida y escalado fraccional experimental.\n\nLiquidOS activa `scale-monitor-framebuffer` por defecto.' },
+    { id: 'm5', from: 'Comunidad', subject: 'Reporte mensual de la distro', when: 'Vie', unread: false, body: 'Este mes: 1 240 descargas de la ISO, 38 incidencias cerradas y 6 nuevas traducciones.\n\nGracias por hacer crecer el proyecto.' }
+  ],
+  sent: [
+    { id: 's1', from: 'Yo', subject: 'Re: Nueva paleta para el Dock', when: 'Ayer', unread: false, body: 'Me gusta la dirección. Mantengamos el indicador discreto y subamos un poco el contraste en claro.\n\n— Sebastián' }
+  ],
+  archive: [
+    { id: 'a1', from: 'Infraestructura', subject: 'Compilación nocturna completada', when: 'Hace 3 días', unread: false, body: 'La ISO nightly se generó correctamente y pasó las comprobaciones de arranque en BIOS y UEFI.' }
+  ]
+};
+
 /* ---------------------------- Estado ---------------------------- */
 
 const state = {
-  open: new Map(),          // id -> { el, min: boolean, rect: null }
+  open: new Map(),          // id -> { el, min, rect }
   z: 10,
   cascade: 0,
   theme: 'dark',
   mag: true,
   anim: true,
-  booted: false
+  booted: false,
+  menubarHidden: false,
+  system: {
+    wifi: true,
+    wifiNetwork: 'liquido-5G',
+    bt: false,
+    dnd: false,
+    snd: true,
+    autoDark: false,
+    dockAuto: false,
+    dockSize: 52,
+    brightness: 88,
+    volume: 45,
+    mute: false,
+    night: false,
+    lowPower: false,
+    output: 'Altavoces internos',
+    resolution: '1920 × 1080'
+  },
+  views: {
+    archivos: { path: 'inicio', stack: ['inicio'], selected: null, query: '' },
+    navegador: { stack: ['inicio'], index: 0, query: '' },
+    correo: { box: 'inbox', selected: null, compose: null },
+    notas: {
+      index: 0,
+      notes: [
+        {
+          title: 'Bienvenido',
+          preview: 'LiquidOS es una distro basada en Debian…',
+          html: '<h2>Bienvenido a LiquidOS</h2><div class="date">28 de octubre de 2026 · 09:41</div><p>Este es el escritorio de <b>LiquidOS</b>, una distribución de Linux basada en Debian que toma la calma visual de macOS y la combina con la libertad del software libre.</p><ul><li>Barra de menús translúcida con blur real.</li><li>Dock con magnificación y ventanas arrastrables.</li><li>Spotlight con <b>Ctrl + Espacio</b>.</li><li>Centro de control con modo claro y oscuro.</li></ul><p style="color:var(--text-dim)">Puedes escribir aquí: esta nota es editable.</p>'
+        },
+        {
+          title: 'Ideas',
+          preview: 'Dock con magnificación, Spotlight…',
+          html: '<h2>Ideas para la próxima versión</h2><div class="date">27 de octubre de 2026</div><p>Cosas que quiero probar en LiquidOS 1.1:</p><ul><li>Ventanas con esquinas más suaves y sombra en dos capas.</li><li>Un modo «enfoque» para el Dock.</li><li>Sonidos de interfaz discretos al abrir y cerrar.</li></ul>'
+        },
+        {
+          title: 'Compilar',
+          preview: 'make iso · make look · make preview',
+          html: '<h2>Compilar y probar</h2><div class="date">26 de octubre de 2026</div><p>Atajos del repositorio:</p><ul><li><b>make preview</b> — abre esta demo.</li><li><b>make iso</b> — construye la ISO con Docker.</li><li><b>make native</b> — compila en Debian con sudo.</li><li><b>make look</b> — aplica el aspecto a un Debian existente.</li></ul>'
+        }
+      ]
+    },
+    musica: { index: 0, playing: false, progress: 0, filter: 'todas' },
+    ajustes: { section: 'apariencia' }
+  },
+  desktopIcons: []
 };
 
 const desktop = $('#desktop');
 const windowsLayer = $('#windows');
 const dock = $('#dock');
+const desktopIconsEl = $('#desktopIcons');
+
+const AUX_TITLES = {};
+
+/* Capas de sistema: brillo, luz nocturna y panel emergente */
+const dimLayer = document.createElement('div');
+dimLayer.className = 'dim-layer';
+desktop.appendChild(dimLayer);
+
+const nightLayer = document.createElement('div');
+nightLayer.className = 'night-layer';
+desktop.appendChild(nightLayer);
+
+const flyout = document.createElement('div');
+flyout.className = 'flyout';
+flyout.id = 'flyout';
+flyout.hidden = true;
+desktop.appendChild(flyout);
 
 /* ---------------------------- Utilidades ---------------------------- */
 
 let toastTimer;
-function toast(msg) {
+function toast(msg, ms = 2200) {
   const el = $('#toast');
   el.textContent = msg;
   el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 2200);
+  toastTimer = setTimeout(() => { el.hidden = true; }, ms);
 }
 
-function icons(name) { return svg(name); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function paintRange(input) {
+  const min = Number(input.min) || 0;
+  const max = Number(input.max) || 100;
+  const pct = ((Number(input.value) - min) / (max - min)) * 100;
+  input.style.setProperty('--fill', pct.toFixed(1) + '%');
+}
+
+let audioCtx;
+function beep(freq = 880) {
+  if (!state.system.snd) { toast('Los sonidos del sistema están desactivados'); return; }
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const vol = state.system.mute ? 0 : Math.max(0.01, state.system.volume / 100) * 0.06;
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.18);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch {
+    toast('El navegador bloqueó el audio');
+  }
+}
 
 /* ---------------------------- Dock ---------------------------- */
 
@@ -100,7 +341,7 @@ function buildDock() {
       trash.innerHTML = `
         <span class="app-icon trash">${svg('trash')}</span>
         <span class="dock-tip">Papelera</span>`;
-      trash.addEventListener('click', () => toast('La papelera está vacía'));
+      trash.addEventListener('click', () => toast('La papelera está vacía · 0 elementos'));
       dock.appendChild(trash);
     }
   });
@@ -111,7 +352,7 @@ function buildDock() {
 
 function magnify(e) {
   if (!state.mag) return;
-  const items = [...dock.querySelectorAll('.dock-item')];
+  const items = $$('.dock-item', dock);
   const sigma = 78;
   items.forEach((el) => {
     const r = el.getBoundingClientRect();
@@ -123,7 +364,7 @@ function magnify(e) {
 }
 
 function resetMagnify() {
-  dock.querySelectorAll('.dock-item').forEach((el) => {
+  $$('.dock-item', dock).forEach((el) => {
     el.style.setProperty('--s', '1');
     el.style.transform = '';
   });
@@ -134,15 +375,9 @@ function resetMagnify() {
 function onDockClick(id) {
   const entry = state.open.get(id);
   if (!entry) return openApp(id);
-  if (entry.min) {
-    restoreWin(id);
-    return;
-  }
-  if (entry.el.classList.contains('focused')) {
-    animateMinimize(id);
-  } else {
-    focusWin(id);
-  }
+  if (entry.min) return restoreWin(id);
+  if (entry.el.classList.contains('focused')) animateMinimize(id);
+  else focusWin(id);
 }
 
 function genieOrigin(win, id) {
@@ -168,17 +403,27 @@ function focusWin(id) {
   const entry = state.open.get(id);
   if (!entry) return;
   entry.el.style.zIndex = ++state.z;
-  const app = byId[id];
-  $('.app-name').textContent = app ? app.name : (id === 'acerca' ? 'Acerca de LiquidOS' : 'Escritorio');
+  $('.app-name').textContent = byId[id] ? byId[id].name : (AUX_TITLES[id] || 'Escritorio');
 }
 
-function openApp(id) {
+function openApp(id, opts = {}) {
+  if (id === 'acerca') return openAbout();
   const app = byId[id];
   if (!app) return;
+
+  if (id === 'ajustes' && opts.section) state.views.ajustes.section = opts.section;
+  if (id === 'archivos' && opts.path && FS[opts.path]) {
+    state.views.archivos.path = opts.path;
+    state.views.archivos.stack = [opts.path];
+    state.views.archivos.selected = null;
+    state.views.archivos.query = '';
+  }
+
   const entry = state.open.get(id);
   if (entry) {
     if (entry.min) restoreWin(id);
     else { focusWin(id); bounce(id); }
+    if (opts.section || opts.path) rerenderWindow(id);
     return;
   }
 
@@ -211,34 +456,32 @@ function openApp(id) {
   state.open.set(id, { el: win, min: false, rect: null });
   bounce(id);
   focusWin(id);
-
-  win.querySelector('.dot.close').addEventListener('click', () => closeWin(id));
-  win.querySelector('.dot.min').addEventListener('click', () => animateMinimize(id));
-  win.querySelector('.dot.max').addEventListener('click', () => toggleMax(id));
-  win.addEventListener('pointerdown', () => focusWin(id), true);
-  const head = win.querySelector('.window-head');
-  head.addEventListener('pointerdown', (e) => startDrag(e, win, id));
-  head.addEventListener('dblclick', (e) => {
-    if (!e.target.closest('.dot')) toggleMax(id);
-  });
+  wireWindowChrome(win, id);
+  wireWindow(id, win);
 
   const dockItem = dock.querySelector(`[data-app="${id}"]`);
   if (dockItem) dockItem.classList.add('running');
+}
 
-  wireWindow(id, win);
+function rerenderWindow(id) {
+  const entry = state.open.get(id);
+  if (!entry) return;
+  const body = entry.el.querySelector('.win-body');
+  body.innerHTML = render(id);
+  wireWindow(id, entry.el);
 }
 
 function closeWin(id) {
   const entry = state.open.get(id);
   if (!entry) return;
-  entry.el.classList.add('closed');
   const el = entry.el;
+  el.classList.add('closed');
   setTimeout(() => el.remove(), 160);
   state.open.delete(id);
+
   const dockItem = dock.querySelector(`[data-app="${id}"]`);
   if (dockItem) dockItem.classList.remove('running');
 
-  // Devuelve el foco a la ventana que quedó arriba, si hay alguna.
   const rest = [...state.open.entries()]
     .sort((a, b) => Number(b[1].el.style.zIndex || 0) - Number(a[1].el.style.zIndex || 0));
   if (rest.length) focusWin(rest[0][0]);
@@ -348,6 +591,47 @@ function startDrag(e, win, id) {
   focusWin(id);
 }
 
+function wireWindowChrome(win, id) {
+  win.querySelector('.dot.close').addEventListener('click', () => closeWin(id));
+  win.querySelector('.dot.min').addEventListener('click', () => animateMinimize(id));
+  win.querySelector('.dot.max').addEventListener('click', () => toggleMax(id));
+  win.addEventListener('pointerdown', () => focusWin(id), true);
+  const head = win.querySelector('.window-head');
+  head.addEventListener('pointerdown', (e) => startDrag(e, win, id));
+  head.addEventListener('dblclick', (e) => {
+    if (!e.target.closest('.dot')) toggleMax(id);
+  });
+}
+
+/* ---------------------------- Apariencia ---------------------------- */
+
+function setAnim(on) {
+  state.anim = on;
+  document.body.classList.toggle('no-anim', !on);
+}
+
+function setTheme(mode) {
+  state.theme = mode === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('light', state.theme === 'light');
+  document.body.classList.toggle('dark', state.theme === 'dark');
+
+  const label = $('#appearanceLabel');
+  if (label) label.textContent = state.theme === 'dark' ? 'Oscuro' : 'Claro';
+
+  const tile = $('#ccThemeTile');
+  if (tile) tile.dataset.on = 'true';
+
+  $$('.seg button, .seg2 button').forEach((b) => {
+    b.classList.toggle('on', b.dataset.theme === state.theme);
+  });
+
+  if (state.open.has('ajustes')) {
+    const active = document.activeElement;
+    const editing = active && active.closest('#windows');
+    if (!editing) rerenderWindow('ajustes');
+  }
+}
+
 /* ---------------------------- Contenidos ---------------------------- */
 
 function render(id) {
@@ -363,236 +647,1354 @@ function render(id) {
   }
 }
 
+/* ---------------------------- Archivos ---------------------------- */
+
+function fileIconClass(item) {
+  if (item.type === 'folder') return item.cls || '';
+  return { doc: 'doc', img: 'img', aud: 'aud', pkg: 'pkg' }[item.type] || '';
+}
+
+function finderVisibleItems() {
+  const v = state.views.archivos;
+  const dir = FS[v.path] || FS.inicio;
+  const q = v.query.trim().toLowerCase();
+  return dir.items.filter((it) => !q || it.name.toLowerCase().includes(q));
+}
+
 function viewFinder() {
+  const v = state.views.archivos;
+  const dir = FS[v.path] || FS.inicio;
+  const items = finderVisibleItems();
+  const crumb = v.stack
+    .map((p) => (FS[p] ? FS[p].label.split(' / ').pop() : p))
+    .join(' / ');
+
   const places = [
-    ['desktop', 'Escritorio'], ['home', 'Inicio'], ['doc', 'Documentos'],
-    ['download', 'Descargas'], ['image', 'Imágenes'], ['music', 'Música']
+    ['escritorio', 'Escritorio'], ['inicio', 'Inicio'], ['documentos', 'Documentos'],
+    ['descargas', 'Descargas'], ['imagenes', 'Imágenes'], ['musica', 'Música']
   ];
-  const files = [
-    ['folder-doc', 'Documentos'], ['folder-img', 'Imágenes'], ['folder-mus', 'Música'],
-    ['', 'Descargas'], ['', 'Proyectos'], ['', 'Capturas'], ['', 'Escritorio'], ['folder-img', 'Vídeos']
-  ];
+
   return `
   <div class="finder">
     <aside class="sidebar">
       <h4>Favoritos</h4>
-      ${places.map(([ic, label], i) => `
-        <button class="${i === 1 ? 'on' : ''}">${icons(ic)}<span>${label}</span></button>`).join('')}
+      ${places.map(([path, label]) => `
+        <button data-place="${path}" class="${v.path === path ? 'on' : ''}">${icons(path === 'escritorio' ? 'desktop' : path === 'inicio' ? 'home' : path === 'documentos' ? 'doc' : path === 'descargas' ? 'download' : path === 'imagenes' ? 'image' : 'music')}<span>${label}</span></button>`).join('')}
       <h4>Etiquetas</h4>
-      <button>${icons('tag')}<span>Importante</span></button>
-      <button>${icons('tag')}<span>Proyectos</span></button>
+      <button data-place="importante" class="${v.path === 'importante' ? 'on' : ''}">${icons('tag')}<span>Importante</span></button>
+      <button data-place="proyectos" class="${v.path === 'proyectos' ? 'on' : ''}">${icons('tag')}<span>Proyectos</span></button>
     </aside>
     <div class="finder-main">
       <div class="finder-bar">
-        <span class="pill">Inicio</span>
-        <span>8 elementos · 42,3 GB disponibles</span>
+        <button class="finder-back" data-finder-back title="Atrás" ${v.stack.length < 2 ? 'disabled' : ''}>${icons('back')}</button>
+        <span class="pill">${crumb}</span>
+        <span data-finder-count>${items.length} elementos · 42,3 GB disponibles</span>
+        <input class="finder-search" data-finder-search placeholder="Buscar" value="${escapeHtml(v.query)}" aria-label="Buscar archivos">
       </div>
       <div class="grid">
-        ${files.map(([cls, label], i) => `
-          <div class="file">
-            <div class="file-icon ${cls}"></div>
-            <span>${i === 7 ? 'Música' : label}</span>
-          </div>`).join('')}
+        ${items.map((it) => `
+          <button class="file ${v.selected === it.name ? 'on' : ''}" data-name="${escapeHtml(it.name)}" data-kind="${it.type}" title="${escapeHtml(it.name)}${it.meta ? ' · ' + it.meta : ''}">
+            <span class="file-icon ${fileIconClass(it)}"></span>
+            <span>${escapeHtml(it.name)}</span>
+          </button>`).join('')}
+        <div class="finder-empty" data-finder-empty ${items.length ? 'hidden' : ''}>No hay elementos que coincidan.</div>
       </div>
+    </div>
+  </div>`;
+}
+
+function updateFinderStatus(win) {
+  const v = state.views.archivos;
+  const count = $$('.file', win).filter((f) => !f.hidden).length;
+  const el = $('[data-finder-count]', win);
+  if (el) {
+    el.textContent = `${count} elemento${count === 1 ? '' : 's'} · 42,3 GB disponibles` +
+      (v.selected ? ' · 1 seleccionado' : '');
+  }
+}
+
+function filterFinder(win) {
+  const v = state.views.archivos;
+  const q = v.query.trim().toLowerCase();
+  let visible = 0;
+  $$('.file', win).forEach((f) => {
+    const match = !q || f.dataset.name.toLowerCase().includes(q);
+    f.hidden = !match;
+    if (match) visible++;
+  });
+  const empty = $('[data-finder-empty]', win);
+  if (empty) empty.hidden = visible > 0;
+  updateFinderStatus(win);
+}
+
+function navigateFinder(path) {
+  if (!FS[path]) return;
+  const v = state.views.archivos;
+  v.path = path;
+  v.stack.push(path);
+  v.query = '';
+  v.selected = null;
+  rerenderWindow('archivos');
+}
+
+function openFinderItem(name) {
+  const v = state.views.archivos;
+  const dir = FS[v.path] || FS.inicio;
+  const item = dir.items.find((it) => it.name === name);
+  if (!item) return;
+
+  if (item.type === 'folder') {
+    navigateFinder(item.to || 'escritorio');
+    return;
+  }
+  switch (item.type) {
+    case 'doc':
+      openApp('notas');
+      toast(`Abriendo «${item.name}» en Notas`);
+      break;
+    case 'aud':
+      openApp('musica');
+      toast(`Abriendo «${item.name}» en Música`);
+      break;
+    case 'img':
+      openImagePreview(item);
+      break;
+    case 'pkg':
+      openApp('navegador');
+      browserGo('descargas');
+      toast(`«${item.name}» · ${item.meta || 'archivo'} · descarga simulada`);
+      break;
+    default:
+      toast(`«${item.name}» · ${item.meta || 'archivo'}`);
+  }
+}
+
+function openImagePreview(item) {
+  const id = `vista-${item.name}`;
+  openAux(id, item.name, `
+    <div class="preview-box">
+      <div class="preview-img"><span>${icons('image')}</span></div>
+      <h3>${escapeHtml(item.name)}</h3>
+      <p>Vista previa de demostración · ${escapeHtml(item.meta || 'imagen')}</p>
+      <div class="mail-actions">
+        <button class="btn primary" data-open-app="archivos">Ver en Archivos</button>
+        <button class="btn" data-open-app="ajustes">Ajustes</button>
+      </div>
+    </div>`, 480, 460);
+}
+
+function wireFinder(win) {
+  const body = win.querySelector('.win-body');
+  const v = state.views.archivos;
+
+  $$('[data-place]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const path = btn.dataset.place;
+      if (!FS[path]) return;
+      v.path = path;
+      v.stack = [path];
+      v.query = '';
+      v.selected = null;
+      rerenderWindow('archivos');
+    });
+  });
+
+  const back = $('[data-finder-back]', body);
+  if (back) {
+    back.addEventListener('click', () => {
+      if (v.stack.length < 2) return;
+      v.stack.pop();
+      v.path = v.stack[v.stack.length - 1];
+      v.query = '';
+      v.selected = null;
+      rerenderWindow('archivos');
+    });
+  }
+
+  const search = $('[data-finder-search]', body);
+  if (search) {
+    search.addEventListener('input', () => {
+      v.query = search.value;
+      filterFinder(win);
+    });
+  }
+
+  $$('.file', body).forEach((file) => {
+    file.addEventListener('click', () => {
+      v.selected = v.selected === file.dataset.name ? null : file.dataset.name;
+      $$('.file', body).forEach((f) => f.classList.toggle('on', f.dataset.name === v.selected));
+      updateFinderStatus(win);
+    });
+    file.addEventListener('dblclick', () => openFinderItem(file.dataset.name));
+  });
+}
+
+/* ---------------------------- Navegador ---------------------------- */
+
+const SITE_URL = {
+  inicio: 'liquidos.local/inicio',
+  favoritos: 'liquidos.local/favoritos',
+  historial: 'liquidos.local/historial',
+  descargas: 'liquidos.local/descargas'
+};
+
+function sitePageTitle(id) {
+  return { inicio: 'Inicio', favoritos: 'Favoritos', historial: 'Historial', descargas: 'Descargas' }[id] || 'Inicio';
+}
+
+function browserPageHtml(id) {
+  if (id === 'buscar') {
+    const q = state.views.navegador.query || '';
+    return `
+    <div class="page">
+      <h2>No se pudo abrir esa dirección</h2>
+      <p class="lead">«${escapeHtml(q)}» no existe en la demo. Prueba con <b>liquidos.local/inicio</b>.</p>
+      <button class="btn primary" data-page="inicio">Volver al inicio</button>
+    </div>`;
+  }
+
+  if (id === 'favoritos') {
+    return `
+    <div class="page">
+      <h2>Favoritos</h2>
+      <p class="lead">Los sitios que guardaste en este equipo.</p>
+      <button class="list-row" data-page="inicio">
+        <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons('globe')}</span>
+        <span><b>LiquidOS</b><small>liquidos.local/inicio</small></span>
+        <span class="meta">Inicio</span>
+      </button>
+      <button class="list-row" data-page="descargas">
+        <span class="mini app-icon" style="--c1:#63e6dd;--c2:#0b8f96">${icons('download')}</span>
+        <span><b>Descargas</b><small>liquidos.local/descargas</small></span>
+        <span class="meta">Sistema</span>
+      </button>
+      <button class="list-row" data-page="historial">
+        <span class="mini app-icon" style="--c1:#ffd48f;--c2:#f09a3c">${icons('clock')}</span>
+        <span><b>Historial</b><small>liquidos.local/historial</small></span>
+        <span class="meta">Reciente</span>
+      </button>
+    </div>`;
+  }
+
+  if (id === 'historial') {
+    return `
+    <div class="page">
+      <h2>Historial</h2>
+      <p class="lead">Páginas visitadas en esta sesión.</p>
+      <button class="list-row" data-page="inicio"><span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons('globe')}</span><span><b>Bienvenido a LiquidOS</b><small>liquidos.local/inicio</small></span><span class="meta">Ahora</span></button>
+      <button class="list-row" data-page="favoritos"><span class="mini app-icon" style="--c1:#ffd48f;--c2:#f09a3c">${icons('tag')}</span><span><b>Favoritos</b><small>liquidos.local/favoritos</small></span><span class="meta">Hoy</span></button>
+      <button class="list-row" data-page="descargas"><span class="mini app-icon" style="--c1:#63e6dd;--c2:#0b8f96">${icons('download')}</span><span><b>Descargas</b><small>liquidos.local/descargas</small></span><span class="meta">Ayer</span></button>
+    </div>`;
+  }
+
+  if (id === 'descargas') {
+    return `
+    <div class="page">
+      <h2>Descargas</h2>
+      <p class="lead">Archivos disponibles en este equipo.</p>
+      <button class="list-row" data-dl="LiquidOS-1.0-amd64.iso"><span class="mini app-icon" style="--c1:#b8c6db;--c2:#7d8ba1">${icons('doc')}</span><span><b>LiquidOS-1.0-amd64.iso</b><small>Imagen híbrida BIOS + UEFI</small></span><span class="meta">2,4 GB</span></button>
+      <button class="list-row" data-dl="liquidos-1.0-amd64.iso.sha256"><span class="mini app-icon" style="--c1:#c9d1e0;--c2:#7d8798">${icons('doc')}</span><span><b>liquidos-1.0-amd64.iso.sha256</b><small>Suma de verificación</small></span><span class="meta">96 B</span></button>
+      <button class="list-row" data-dl="build.log"><span class="mini app-icon" style="--c1:#c9d1e0;--c2:#7d8798">${icons('doc')}</span><span><b>build.log</b><small>Registro de compilación</small></span><span class="meta">312 KB</span></button>
+    </div>`;
+  }
+
+  return `
+  <div class="page start-page">
+    <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
+    <h2>Bienvenido a LiquidOS</h2>
+    <p>Tu escritorio, fluido y silencioso. Todo lo que necesitas, a un gesto de distancia.</p>
+    <div class="tiles">
+      <button class="tile" data-page="inicio"><b>⌘</b>LiquidOS</button>
+      <button class="tile" data-page="favoritos"><b>★</b>Favoritos</button>
+      <button class="tile" data-page="historial"><b>↺</b>Historial</button>
+      <button class="tile" data-page="descargas"><b>⤓</b>Descargas</button>
     </div>
   </div>`;
 }
 
 function viewBrowser() {
-  const tiles = [['⌘', 'LiquidOS'], ['★', 'Favoritos'], ['↺', 'Historial'], ['⤓', 'Descargas']];
+  const b = state.views.navegador;
+  const id = b.stack[b.index] || 'inicio';
+  const url = id === 'buscar'
+    ? `liquidos.local/buscar?q=${encodeURIComponent(b.query)}`
+    : SITE_URL[id];
+
   return `
   <div class="browser">
     <div class="browser-bar">
-      <button class="nav">←</button>
-      <button class="nav">→</button>
-      <div class="url">${icons('globe')}<span>liquidos.local/inicio</span></div>
-      <button class="nav">${icons('search')}</button>
+      <button class="nav" data-nav="back" title="Atrás" ${b.index === 0 ? 'disabled' : ''}>${icons('back')}</button>
+      <button class="nav" data-nav="forward" title="Adelante" ${b.index >= b.stack.length - 1 ? 'disabled' : ''}>${icons('forward')}</button>
+      <div class="url">${icons('globe')}<input data-url value="${escapeHtml(url)}" spellcheck="false" aria-label="Dirección"></div>
+      <button class="nav" data-nav="reload" title="Recargar">${icons('reload')}</button>
+      <button class="nav" data-nav="search" title="Buscar">${icons('search')}</button>
     </div>
-    <div class="start-page">
-      <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
-      <h2>Bienvenido a LiquidOS</h2>
-      <p>Tu escritorio, fluido y silencioso. Todo lo que necesitas, a un gesto de distancia.</p>
-      <div class="tiles">
-        ${tiles.map(([g, t]) => `<div class="tile"><b>${g}</b>${t}</div>`).join('')}
-      </div>
-    </div>
+    ${browserPageHtml(id)}
   </div>`;
+}
+
+function browserGo(id) {
+  const b = state.views.navegador;
+  if (id === 'buscar' && !b.query) id = 'inicio';
+  b.stack = b.stack.slice(0, b.index + 1);
+  b.stack.push(id);
+  if (b.stack.length > 30) {
+    b.stack.shift();
+  }
+  b.index = b.stack.length - 1;
+  rerenderWindow('navegador');
+}
+
+function browserNavigate(raw) {
+  const b = state.views.navegador;
+  const clean = raw.trim().replace(/^https?:\/\//i, '');
+  const path = clean.replace(/^liquidos\.local\/?/i, '').split(/[?#/]/)[0].toLowerCase();
+  if (!path || path === 'inicio') return browserGo('inicio');
+  if (SITE_URL[path]) return browserGo(path);
+  b.query = raw.trim();
+  browserGo('buscar');
+}
+
+function wireBrowser(win) {
+  const body = win.querySelector('.win-body');
+  const b = state.views.navegador;
+
+  $$('[data-nav]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.nav;
+      if (action === 'back' && b.index > 0) { b.index--; rerenderWindow('navegador'); }
+      else if (action === 'forward' && b.index < b.stack.length - 1) { b.index++; rerenderWindow('navegador'); }
+      else if (action === 'reload') { toast('Recargando…', 900); rerenderWindow('navegador'); }
+      else if (action === 'search') {
+        const input = $('[data-url]', body);
+        if (input) { input.focus(); input.select(); }
+      }
+    });
+  });
+
+  $$('[data-page]', body).forEach((btn) => {
+    btn.addEventListener('click', () => browserGo(btn.dataset.page));
+  });
+
+  const url = $('[data-url]', body);
+  if (url) {
+    url.addEventListener('focus', () => url.select());
+    url.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); browserNavigate(url.value); }
+    });
+  }
+
+  $$('[data-dl]', body).forEach((btn) => {
+    btn.addEventListener('click', () => toast(`«${btn.dataset.dl}» · descarga simulada`));
+  });
+
+  const title = win.querySelector('.win-title');
+  if (title) title.textContent = `Navegador — ${sitePageTitle(b.stack[b.index])}`;
+}
+
+/* ---------------------------- Correo ---------------------------- */
+
+function mailFind(id) {
+  for (const box of Object.keys(MAILBOXES)) {
+    const msg = MAILBOXES[box].find((m) => m.id === id);
+    if (msg) return { msg, box };
+  }
+  return null;
+}
+
+function mailBodyHtml(body) {
+  return body.split('\n\n').map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
 
 function viewMail() {
-  const mails = [
-    ['Equipo LiquidOS', 'Bienvenido a la beta de Torrente', 'Hoy', true],
-    ['Actualizaciones', 'Tu sistema está al día', 'Ayer', false],
-    ['Diseño', 'Nueva paleta para el Dock', 'Ayer', false],
-    ['GNOME', 'Notas de la versión 46', 'Lun', false],
-    ['Comunidad', 'Reporte mensual de la distro', 'Vie', false]
-  ];
+  const v = state.views.correo;
+
+  if (v.compose) {
+    return `
+    <div class="notes">
+      <aside class="notes-list">
+        ${mailSidebar()}
+      </aside>
+      <div class="mail-panel compose">
+        <h2>Nuevo mensaje</h2>
+        <input data-compose-to placeholder="Para" value="${escapeHtml(v.compose.to || '')}" aria-label="Para">
+        <input data-compose-subject placeholder="Asunto" value="${escapeHtml(v.compose.subject || '')}" aria-label="Asunto">
+        <textarea data-compose-body placeholder="Escribe tu mensaje…" aria-label="Mensaje">${escapeHtml(v.compose.body || '')}</textarea>
+        <div class="mail-actions">
+          <button class="btn primary" data-mail-act="send">${icons('send')} Enviar</button>
+          <button class="btn" data-mail-act="cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if (v.selected) {
+    const found = mailFind(v.selected);
+    if (found) {
+      const { msg } = found;
+      return `
+      <div class="notes">
+        <aside class="notes-list">
+          ${mailSidebar()}
+        </aside>
+        <div class="mail-panel mail-read">
+          <button class="btn" data-mail-act="back">${icons('back')} Volver al buzón</button>
+          <h2>${escapeHtml(msg.subject)}</h2>
+          <div class="mail-meta">De <b>${escapeHtml(msg.from)}</b> · ${msg.when}</div>
+          <div class="mail-body">${mailBodyHtml(msg.body)}</div>
+          <div class="mail-actions">
+            <button class="btn primary" data-mail-act="reply">${icons('reply')} Responder</button>
+            <button class="btn" data-mail-act="archive">Archivar</button>
+            <button class="btn danger" data-mail-act="delete">Eliminar</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    v.selected = null;
+  }
+
+  const list = MAILBOXES[v.box];
   return `
   <div class="notes">
     <aside class="notes-list">
-      <div class="note-item on"><b>Bandeja de entrada</b>5 mensajes sin leer</div>
-      <div class="note-item"><b>Enviados</b>Hace un momento</div>
-      <div class="note-item"><b>Archivo</b>128 mensajes</div>
+      ${mailSidebar()}
     </aside>
-    <div style="overflow:auto">
-      ${mails.map(([from, subj, when, unread]) => `
-        <div class="row" style="border-radius:0;border:0;border-bottom:1px solid var(--stroke-soft);margin:0;background:transparent">
-          <div>
-            <div style="display:flex;gap:8px;align-items:center">
-              ${unread ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span>' : ''}
-              <b>${from}</b>
-            </div>
-            <small>${subj}</small>
-          </div>
-          <span style="color:var(--text-dim);font-size:11.5px">${when}</span>
-        </div>`).join('')}
+    <div class="mail-panel">
+      <div class="mail-toolbar">
+        <b>${v.box === 'inbox' ? 'Bandeja de entrada' : v.box === 'sent' ? 'Enviados' : 'Archivo'}</b>
+        <span>${list.length} mensaje${list.length === 1 ? '' : 's'}</span>
+      </div>
+      ${list.length ? list.map((m) => `
+        <button class="mail-row" data-msg="${m.id}">
+          <span class="mail-dot ${m.unread ? 'on' : ''}"></span>
+          <span class="mail-text"><b>${escapeHtml(m.from)}</b><small>${escapeHtml(m.subject)}</small></span>
+          <span class="mail-when">${m.when}</span>
+        </button>`).join('') : '<div class="mail-empty">No hay mensajes en este buzón.</div>'}
     </div>
   </div>`;
+}
+
+function mailSidebar() {
+  const v = state.views.correo;
+  const unread = MAILBOXES.inbox.filter((m) => m.unread).length;
+  return `
+    <h4>Buzones</h4>
+    <button class="note-item ${v.box === 'inbox' ? 'on' : ''}" data-box="inbox"><b>Bandeja de entrada</b>${unread} sin leer</button>
+    <button class="note-item ${v.box === 'sent' ? 'on' : ''}" data-box="sent"><b>Enviados</b>${MAILBOXES.sent.length} mensajes</button>
+    <button class="note-item ${v.box === 'archive' ? 'on' : ''}" data-box="archive"><b>Archivo</b>${MAILBOXES.archive.length} mensajes</button>
+    <div class="mail-actions" style="margin-top:14px">
+      <button class="btn primary" data-mail-act="new">${icons('plus')} Nuevo mensaje</button>
+    </div>`;
+}
+
+function wireMail(win) {
+  const body = win.querySelector('.win-body');
+  const v = state.views.correo;
+
+  $$('[data-box]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      v.box = btn.dataset.box;
+      v.selected = null;
+      v.compose = null;
+      rerenderWindow('correo');
+    });
+  });
+
+  $$('[data-msg]', body).forEach((row) => {
+    row.addEventListener('click', () => {
+      const found = mailFind(row.dataset.msg);
+      if (!found) return;
+      found.msg.unread = false;
+      v.selected = row.dataset.msg;
+      rerenderWindow('correo');
+    });
+  });
+
+  $$('[data-mail-act]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.mailAct;
+      const found = v.selected ? mailFind(v.selected) : null;
+
+      if (act === 'back') {
+        v.selected = null;
+        rerenderWindow('correo');
+      } else if (act === 'new') {
+        v.compose = { to: '', subject: '', body: '' };
+        v.selected = null;
+        rerenderWindow('correo');
+      } else if (act === 'cancel') {
+        v.compose = null;
+        rerenderWindow('correo');
+      } else if (act === 'reply' && found) {
+        v.compose = { to: found.msg.from, subject: `Re: ${found.msg.subject}`, body: '' };
+        v.selected = null;
+        rerenderWindow('correo');
+      } else if (act === 'archive' && found) {
+        MAILBOXES[found.box] = MAILBOXES[found.box].filter((m) => m.id !== found.msg.id);
+        MAILBOXES.archive.unshift(found.msg);
+        v.selected = null;
+        rerenderWindow('correo');
+        toast('Mensaje archivado');
+      } else if (act === 'delete' && found) {
+        MAILBOXES[found.box] = MAILBOXES[found.box].filter((m) => m.id !== found.msg.id);
+        v.selected = null;
+        rerenderWindow('correo');
+        toast('Mensaje eliminado');
+      } else if (act === 'send') {
+        const to = $('[data-compose-to]', body)?.value.trim();
+        const subject = $('[data-compose-subject]', body)?.value.trim() || '(sin asunto)';
+        const text = $('[data-compose-body]', body)?.value.trim() || '';
+        if (!to) { toast('Escribe un destinatario'); return; }
+        MAILBOXES.sent.unshift({
+          id: `s${Date.now()}`,
+          from: 'Yo',
+          subject,
+          when: 'Ahora',
+          unread: false,
+          body: `Para: ${to}\n\n${text || '(mensaje vacío)'}`
+        });
+        v.compose = null;
+        v.box = 'sent';
+        v.selected = null;
+        rerenderWindow('correo');
+        toast('Mensaje enviado');
+      }
+    });
+  });
+}
+
+/* ---------------------------- Notas ---------------------------- */
+
+function todayLabel() {
+  return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 }
 
 function viewNotes() {
+  const v = state.views.notas;
+  const note = v.notes[v.index];
   return `
   <div class="notes">
     <aside class="notes-list">
-      <div class="note-item on"><b>Bienvenido</b>LiquidOS es una distro basada en Debian…</div>
-      <div class="note-item"><b>Ideas</b>Dock con magnificación, Spotlight…</div>
-      <div class="note-item"><b>Compilar</b>make iso · make look · make preview</div>
+      <div class="notes-tools">
+        <button data-note-act="new" title="Nueva nota" aria-label="Nueva nota">${icons('plus')}</button>
+        <span class="spacer"></span>
+        <button data-note-act="del" title="Eliminar nota" aria-label="Eliminar nota">${icons('trash')}</button>
+      </div>
+      ${v.notes.map((n, i) => `
+        <button class="note-item ${i === v.index ? 'on' : ''}" data-note="${i}">
+          <b>${escapeHtml(n.title)}</b>
+          <span class="note-prev">${escapeHtml(n.preview)}</span>
+        </button>`).join('')}
     </aside>
-    <div class="note-edit" contenteditable="true" spellcheck="false">
-      <h2>Bienvenido a LiquidOS</h2>
-      <div class="date">28 de octubre de 2026 · 09:41</div>
-      <p>Este es el escritorio de <b>LiquidOS</b>, una distribución de Linux basada en Debian que toma la calma visual de macOS y la combina con la libertad del software libre.</p>
-      <ul>
-        <li>Barra de menús translúcida con blur real.</li>
-        <li>Dock con magnificación y ventanas arrastrables.</li>
-        <li>Spotlight con <b>Ctrl + Espacio</b>.</li>
-        <li>Centro de control con modo claro y oscuro.</li>
-      </ul>
-      <p style="color:var(--text-dim)">Puedes escribir aquí: esta nota es editable.</p>
-    </div>
+    <div class="note-edit" contenteditable="true" spellcheck="false" data-note-body>${note.html}</div>
   </div>`;
 }
 
+function wireNotes(win) {
+  const body = win.querySelector('.win-body');
+  const v = state.views.notas;
+  const editor = $('[data-note-body]', body);
+
+  const save = () => {
+    if (!editor) return;
+    const note = v.notes[v.index];
+    if (!note) return;
+    note.html = editor.innerHTML;
+    note.title = (editor.querySelector('h2')?.textContent || 'Nota').trim() || 'Nota';
+    note.preview = (editor.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 46) || 'Sin contenido';
+    const item = win.querySelector(`[data-note="${v.index}"]`);
+    if (item) {
+      const b = item.querySelector('b');
+      const p = item.querySelector('.note-prev');
+      if (b) b.textContent = note.title;
+      if (p) p.textContent = note.preview;
+    }
+  };
+
+  if (editor) {
+    editor.addEventListener('input', save);
+    editor.addEventListener('focusout', () => { save(); toast('Nota guardada', 1200); });
+  }
+
+  $$('[data-note]', body).forEach((item) => {
+    item.addEventListener('click', () => {
+      save();
+      v.index = Number(item.dataset.note);
+      rerenderWindow('notas');
+    });
+  });
+
+  $$('[data-note-act]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      save();
+      if (btn.dataset.noteAct === 'new') {
+        v.notes.push({
+          title: 'Nueva nota',
+          preview: 'Empieza a escribir…',
+          html: `<h2>Nueva nota</h2><div class="date">${todayLabel()}</div><p>Empieza a escribir…</p>`
+        });
+        v.index = v.notes.length - 1;
+        rerenderWindow('notas');
+        const ed = $('#windows .window[data-app="notas"] [data-note-body]');
+        if (ed) { ed.focus(); ed.scrollTop = 0; }
+        toast('Nota creada');
+      } else {
+        if (v.notes.length === 1) { toast('No puedes borrar la última nota'); return; }
+        v.notes.splice(v.index, 1);
+        v.index = Math.min(v.index, v.notes.length - 1);
+        rerenderWindow('notas');
+        toast('Nota eliminada');
+      }
+    });
+  });
+}
+
+/* ---------------------------- Música ---------------------------- */
+
+function fmtTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function musicOrder() {
+  const v = state.views.musica;
+  const order = MUSIC_TRACKS.map((_, i) => i);
+  if (v.filter === 'recientes') return order.reverse();
+  if (v.filter === 'albumes') return order.sort((a, b) => MUSIC_TRACKS[a].artist.localeCompare(MUSIC_TRACKS[b].artist));
+  return order;
+}
+
 function viewMusic() {
-  const tracks = [
-    ['Océano de datos', 'Liquid Sound', '3:42'],
-    ['Vidrio templado', 'Liquid Sound', '4:10'],
-    ['Marea lenta', 'Nocturno', '2:58'],
-    ['Azul profundo', 'Nocturno', '5:06'],
-    ['Destello', 'Liquid Sound', '3:21']
-  ];
+  const v = state.views.musica;
+  const track = MUSIC_TRACKS[v.index];
+  const pct = (v.progress / track.sec) * 100;
+  const vol = state.system.mute ? 0 : state.system.volume;
+
   return `
   <div class="music">
     <aside class="sidebar">
       <h4>Biblioteca</h4>
-      <button class="on">${icons('music')}<span>Reproduciendo</span></button>
-      <button>${icons('folder')}<span>Álbumes</span></button>
-      <button>${icons('clock')}<span>Recientes</span></button>
+      <button data-filter="todas" class="${v.filter === 'todas' ? 'on' : ''}">${icons('music')}<span>Reproduciendo</span></button>
+      <button data-filter="albumes" class="${v.filter === 'albumes' ? 'on' : ''}">${icons('folder')}<span>Álbumes</span></button>
+      <button data-filter="recientes" class="${v.filter === 'recientes' ? 'on' : ''}">${icons('clock')}<span>Recientes</span></button>
     </aside>
     <div class="music-meta">
-      <div class="cover">♪</div>
-      <h3>Océano de datos</h3>
-      <p>Liquid Sound · Ambiente</p>
-      <div class="bars"><i></i><i></i><i></i><i></i><i></i></div>
-      ${tracks.map(([t, a, d], i) => `
-        <div class="track">
-          <span>${i + 1}. ${t} <span style="color:var(--text-dim)">· ${a}</span></span>
-          <span>${d}</span>
-        </div>`).join('')}
+      <div class="cover ${v.playing ? 'spin' : ''}">♪</div>
+      <h3 data-track-title>${escapeHtml(track.title)}</h3>
+      <p data-track-meta>${escapeHtml(track.artist)} · ${escapeHtml(track.album)}</p>
+      <div class="bars ${v.playing ? '' : 'paused'}"><i></i><i></i><i></i><i></i><i></i></div>
+
+      <div class="transport">
+        <button data-music="prev" title="Anterior" aria-label="Anterior">${icons('prev')}</button>
+        <button class="play" data-music="play" title="${v.playing ? 'Pausa' : 'Reproducir'}" aria-label="${v.playing ? 'Pausa' : 'Reproducir'}">${icons(v.playing ? 'pause' : 'play')}</button>
+        <button data-music="next" title="Siguiente" aria-label="Siguiente">${icons('next')}</button>
+      </div>
+
+      <div class="seek-row">
+        <span data-current>${fmtTime(v.progress)}</span>
+        <input type="range" min="0" max="${track.sec}" value="${v.progress}" data-seek style="--fill:${pct.toFixed(1)}%" aria-label="Progreso">
+        <span>${track.dur}</span>
+      </div>
+
+      <div class="volume-row">
+        ${icons('volume')}
+        <input type="range" min="0" max="100" value="${vol}" data-music-volume aria-label="Volumen">
+        <span>${vol}%</span>
+      </div>
+
+      <ul class="tracklist">
+        ${musicOrder().map((i) => `
+          <li>
+            <button data-track="${i}" class="${i === v.index ? 'on' : ''}">
+              <span><span class="tnum">${i + 1}</span>${escapeHtml(MUSIC_TRACKS[i].title)} <small>· ${escapeHtml(MUSIC_TRACKS[i].artist)}</small></span>
+              <span>${MUSIC_TRACKS[i].dur}</span>
+            </button>
+          </li>`).join('')}
+      </ul>
     </div>
   </div>`;
 }
 
+function updateSeekUI(win) {
+  const v = state.views.musica;
+  const track = MUSIC_TRACKS[v.index];
+  const seek = $('[data-seek]', win);
+  if (seek) {
+    seek.max = track.sec;
+    seek.value = v.progress;
+    paintRange(seek);
+  }
+  const cur = $('[data-current]', win);
+  if (cur) cur.textContent = fmtTime(v.progress);
+}
+
+function wireMusic(win) {
+  const body = win.querySelector('.win-body');
+  const v = state.views.musica;
+
+  $$('[data-music]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.music;
+      if (act === 'play') v.playing = !v.playing;
+      if (act === 'next') { v.index = (v.index + 1) % MUSIC_TRACKS.length; v.progress = 0; }
+      if (act === 'prev') { v.index = (v.index - 1 + MUSIC_TRACKS.length) % MUSIC_TRACKS.length; v.progress = 0; }
+      rerenderWindow('musica');
+    });
+  });
+
+  $$('[data-track]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      v.index = Number(btn.dataset.track);
+      v.progress = 0;
+      v.playing = true;
+      rerenderWindow('musica');
+    });
+  });
+
+  $$('[data-filter]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      v.filter = btn.dataset.filter;
+      rerenderWindow('musica');
+    });
+  });
+
+  const seek = $('[data-seek]', body);
+  if (seek) {
+    seek.addEventListener('input', () => {
+      v.progress = Number(seek.value);
+      paintRange(seek);
+      const cur = $('[data-current]', body);
+      if (cur) cur.textContent = fmtTime(v.progress);
+    });
+  }
+
+  const vol = $('[data-music-volume]', body);
+  if (vol) {
+    vol.addEventListener('input', () => {
+      state.system.volume = Number(vol.value);
+      state.system.mute = state.system.volume === 0;
+      paintRange(vol);
+      const label = vol.parentElement.querySelector('span');
+      if (label) label.textContent = `${vol.value}%`;
+      syncControlCenter();
+    });
+  }
+}
+
+function musicTick() {
+  const v = state.views.musica;
+  if (!v.playing) return;
+  const track = MUSIC_TRACKS[v.index];
+  v.progress += 1;
+  if (v.progress >= track.sec) {
+    v.index = (v.index + 1) % MUSIC_TRACKS.length;
+    v.progress = 0;
+    if (state.open.has('musica')) rerenderWindow('musica');
+    return;
+  }
+  const win = state.open.get('musica')?.el;
+  if (win) updateSeekUI(win);
+}
+
+/* ---------------------------- Terminal ---------------------------- */
+
+const NEOFETCH_BLOCK = `
+  <div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ neofetch</div>
+  <pre class="neo"><span style="color:#5aa9ff">      ▄▄▄▄▄▄▄      </span>  <span class="c">sebas</span>@<span class="c">liquidos</span>
+<span style="color:#5aa9ff">    ▄█▀     ▀█▄    </span>  ----------------------
+<span style="color:#7b5cff">    ██   ▄▄▄   ██   </span>  <span class="w">OS</span>: LiquidOS 1.0 "Torrente" x86_64
+<span style="color:#7b5cff">    ██  █████  ██   </span>  <span class="w">Kernel</span>: 6.1.0-liquidos-amd64
+<span style="color:#2fd1c5">     ▀█▄  ▀▀▀  ▄█▀    </span>  <span class="w">Shell</span>: zsh 5.9
+<span style="color:#2fd1c5">      ▀▀▀▀▀▀▀      </span>  <span class="w">DE</span>: GNOME 46 (LiquidShell)
+                        <span class="w">WM</span>: Mutter
+                        <span class="w">Theme</span>: WhiteSur-Dark
+                        <span class="w">Icons</span>: WhiteSur-dark
+                        <span class="w">CPU</span>: AMD Ryzen 7 (16) @ 3.8GHz
+                        <span class="w">Memory</span>: 2.4GiB / 16GiB</pre>`;
+
+const TERM_HELP = `Comandos disponibles:<br>
+<span class="c">help</span> — esta ayuda · <span class="c">neofetch</span> — información del sistema<br>
+<span class="c">ls</span> — archivos · <span class="c">cat /etc/os-release</span> — identidad<br>
+<span class="c">date</span> · <span class="c">whoami</span> · <span class="c">pwd</span> · <span class="c">uname -a</span> · <span class="c">uptime</span><br>
+<span class="c">open archivos|notas|musica|ajustes</span> — abre una app<br>
+<span class="c">theme light|dark</span> — cambia la apariencia · <span class="c">about</span> — Acerca de<br>
+<span class="c">history</span> — comandos usados · <span class="c">clear</span> · <span class="c">exit</span>`;
+
+const OS_RELEASE = `NAME="LiquidOS"<br>VERSION="1.0 (Torrente)"<br>ID=liquidos<br>ID_LIKE=debian<br>PRETTY_NAME="LiquidOS 1.0 (Torrente)"`;
+
+const termHistory = [];
+let termHistIndex = 0;
+
 function viewTerminal() {
   return `
-  <div class="term">
-    <div><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ neofetch</div>
-    <pre style="margin:8px 0;color:#79c0ff">
-        <span style="color:#5aa9ff">      ▄▄▄▄▄▄▄      </span>  <span class="c">sebas</span>@<span class="c">liquidos</span>
-     <span style="color:#5aa9ff">    ▄█▀     ▀█▄    </span>  ----------------------
-    <span style="color:#7b5cff">    ██   ▄▄▄   ██   </span>  <span class="w">OS</span>: LiquidOS 1.0 "Torrente" x86_64
-    <span style="color:#7b5cff">    ██  █████  ██   </span>  <span class="w">Kernel</span>: 6.1.0-liquidos-amd64
-   <span style="color:#2fd1c5">     ▀█▄  ▀▀▀  ▄█▀    </span>  <span class="w">Shell</span>: zsh 5.9
-      <span style="color:#2fd1c5">      ▀▀▀▀▀▀▀      </span>  <span class="w">DE</span>: GNOME 46 (LiquidShell)
-                          <span class="w">WM</span>: Mutter
-                          <span class="w">Theme</span>: Liquid-Dark
-                          <span class="w">Icons</span>: Liquid-Icons
-                          <span class="w">Terminal</span>: GNOME Terminal
-                          <span class="w">CPU</span>: AMD Ryzen 7 (16) @ 3.8GHz
-                          <span class="w">Memory</span>: 2.4GiB / 16GiB
-    </pre>
-    <div><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ cat /etc/os-release</div>
-    <div class="dim">NAME="LiquidOS"</div>
-    <div class="dim">VERSION="1.0 (Torrente)"</div>
-    <div class="dim">ID=liquidos</div>
-    <div class="dim">ID_LIKE=debian</div>
-    <div class="dim">PRETTY_NAME="LiquidOS 1.0 (Torrente)"</div>
-    <div style="margin-top:10px"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ <span class="caret"></span></div>
+  <div class="term" data-term>
+    <div class="term-scroll" data-term-out>
+      ${NEOFETCH_BLOCK}
+      <div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ cat /etc/os-release</div>
+      <div class="term-line dim">NAME="LiquidOS"</div>
+      <div class="term-line dim">VERSION="1.0 (Torrente)"</div>
+      <div class="term-line dim">ID=liquidos</div>
+      <div class="term-line dim">ID_LIKE=debian</div>
+      <div class="term-line dim">PRETTY_NAME="LiquidOS 1.0 (Torrente)"</div>
+    </div>
+    <div class="term-line term-input-row">
+      <span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$&nbsp;<input class="term-input" data-term-input autocomplete="off" spellcheck="false" aria-label="Comando">
+    </div>
   </div>`;
 }
 
+function termRun(win, raw) {
+  const out = win.querySelector('[data-term-out]');
+  if (!out) return;
+  const cmd = raw.trim();
+  const echo = `<div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ ${escapeHtml(raw)}</div>`;
+
+  if (cmd) {
+    if (termHistory[termHistory.length - 1] !== cmd) termHistory.push(cmd);
+    termHistIndex = termHistory.length;
+  }
+
+  let res = '';
+  const [base, ...args] = cmd.split(/\s+/);
+  switch ((base || '').toLowerCase()) {
+    case '':
+      break;
+    case 'help':
+      res = TERM_HELP;
+      break;
+    case 'neofetch':
+      res = NEOFETCH_BLOCK;
+      break;
+    case 'ls':
+      res = 'Documentos  Imágenes  Música  Descargas  Proyectos  Capturas  <span class="d">preview/</span>  <span class="d">build/</span>';
+      break;
+    case 'cat':
+      res = args[0] === '/etc/os-release' ? OS_RELEASE : `cat: ${escapeHtml(args[0] || '')}: No such file or directory`;
+      break;
+    case 'clear':
+      out.innerHTML = '';
+      return;
+    case 'date':
+      res = escapeHtml(new Date().toLocaleString('es-ES'));
+      break;
+    case 'whoami':
+      res = 'sebas';
+      break;
+    case 'pwd':
+      res = '/home/sebas';
+      break;
+    case 'hostname':
+      res = 'liquidos';
+      break;
+    case 'uname':
+      res = 'Linux liquidos 6.1.0-liquidos-amd64 #1 SMP Debian 6.1 x86_64 GNU/Linux';
+      break;
+    case 'uptime':
+      res = ' 09:41:00 up 12 min, 1 user, load average: 0,42, 0,31, 0,18';
+      break;
+    case 'echo':
+      res = escapeHtml(args.join(' '));
+      break;
+    case 'history':
+      res = termHistory.map((c, i) => `${String(i + 1).padStart(3)}  ${escapeHtml(c)}`).join('<br>');
+      break;
+    case 'open': {
+      const target = (args[0] || '').toLowerCase();
+      const map = { archivos: 'archivos', navegador: 'navegador', correo: 'correo', notas: 'notas', musica: 'musica', ajustes: 'ajustes' };
+      if (map[target]) { openApp(map[target]); res = `Abriendo ${target}…`; }
+      else res = `open: ${escapeHtml(target || '')}: aplicación desconocida`;
+      break;
+    }
+    case 'theme':
+      if (args[0] === 'light' || args[0] === 'dark') { setTheme(args[0]); res = `Tema cambiado a ${args[0]}`; }
+      else res = 'Uso: theme light|dark';
+      break;
+    case 'about':
+      openAbout();
+      break;
+    case 'sudo':
+      res = 'sebas no está en el archivo sudoers. Este incidente será reportado. (demo)';
+      break;
+    case 'exit':
+      closeWin('terminal');
+      return;
+    default:
+      res = `zsh: no se encontró la orden: ${escapeHtml(base)}`;
+  }
+
+  out.insertAdjacentHTML('beforeend', echo + (res ? `<div class="term-line">${res}</div>` : ''));
+  out.scrollTop = out.scrollHeight;
+}
+
+function wireTerminal(win) {
+  const input = win.querySelector('[data-term-input]');
+  const term = win.querySelector('[data-term]');
+  if (!input || !term) return;
+
+  term.addEventListener('click', () => input.focus());
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const value = input.value;
+      input.value = '';
+      termRun(win, value);
+    } else if (e.key === 'ArrowUp') {
+      if (!termHistory.length) return;
+      e.preventDefault();
+      termHistIndex = Math.max(0, termHistIndex - 1);
+      input.value = termHistory[termHistIndex] || '';
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      termHistIndex = Math.min(termHistory.length, termHistIndex + 1);
+      input.value = termHistory[termHistIndex] || '';
+    }
+  });
+
+  setTimeout(() => input.focus(), 80);
+}
+
+/* ---------------------------- Ajustes ---------------------------- */
+
+const SETTINGS_SECTIONS = [
+  { id: 'wifi', label: 'Wi-Fi', glyph: 'wifi' },
+  { id: 'apariencia', label: 'Apariencia', glyph: 'settings' },
+  { id: 'dock', label: 'Escritorio y Dock', glyph: 'desktop' },
+  { id: 'sonido', label: 'Sonido', glyph: 'music' },
+  { id: 'pantalla', label: 'Pantalla', glyph: 'clock' }
+];
+
+const OUTPUT_DEVICES = ['Altavoces internos', 'Auriculares', 'HDMI / Pantalla'];
+const RESOLUTIONS = ['1920 × 1080', '2560 × 1440', '1366 × 768'];
+
 function viewSettings() {
+  const sec = state.views.ajustes.section;
   return `
   <div class="settings">
     <aside class="sidebar">
       <h4>Sistema</h4>
-      <button>${icons('wifi')}<span>Wi-Fi</span></button>
-      <button class="on">${icons('settings')}<span>Apariencia</span></button>
-      <button>${icons('desktop')}<span>Escritorio y Dock</span></button>
-      <button>${icons('music')}<span>Sonido</span></button>
-      <button>${icons('clock')}<span>Pantalla</span></button>
+      ${SETTINGS_SECTIONS.map((s) => `
+        <button data-section="${s.id}" class="${sec === s.id ? 'on' : ''}">${icons(s.glyph)}<span>${s.label}</span></button>`).join('')}
       <h4>Acerca de</h4>
-      <button data-open-about="1">${icons('doc')}<span>Acerca de LiquidOS</span></button>
+      <button data-section="acerca" class="${sec === 'acerca' ? 'on' : ''}">${icons('doc')}<span>Información del sistema</span></button>
     </aside>
-    <div class="set-body">
-      <h3>Apariencia</h3>
-      <p class="sub">Elige cómo se ve LiquidOS en este equipo.</p>
+    <div class="set-body">${settingsPanel(sec)}</div>
+  </div>`;
+}
 
+function settingsPanel(sec) {
+  const s = state.system;
+
+  if (sec === 'wifi') {
+    return `
+      <h3>Wi-Fi</h3>
+      <p class="sub">Elige una red. La conexión es simulada, pero el estado se comparte con el Centro de control.</p>
       <div class="row">
-        <div><b>Tema</b><small>Claro u oscuro para todo el sistema</small></div>
-        <div class="seg2" id="settingsTheme">
-          <button data-theme="light" class="${state.theme === 'light' ? 'on' : ''}">Claro</button>
-          <button data-theme="dark" class="${state.theme === 'dark' ? 'on' : ''}">Oscuro</button>
-        </div>
+        <div><b>Wi-Fi</b><small>${s.wifi ? `Conectado a ${escapeHtml(s.wifiNetwork)}` : 'Desactivado'}</small></div>
+        <button class="switch ${s.wifi ? 'on' : ''}" data-sys="wifi" aria-label="Wi-Fi"></button>
       </div>
-
-      <div class="row">
-        <div><b>Dock</b><small>Ocultar automáticamente</small></div>
-        <button class="switch" data-switch="dock" aria-label="Dock automático"></button>
+      <div class="net-list ${s.wifi ? '' : 'off'}">
+        ${NETWORKS.map((n) => `
+          <button class="net-row ${s.wifi && s.wifiNetwork === n.name ? 'on' : ''}" data-net="${escapeHtml(n.name)}">
+            <span class="net-ico">${icons(n.lock ? 'lock' : 'wifi')}</span>
+            <span class="nm">${escapeHtml(n.name)}${n.known ? '<small>Conocida</small>' : ''}</span>
+            ${s.wifi && s.wifiNetwork === n.name ? `<span class="check">${icons('check')}</span>` : `<span class="net-sig">${icons('wifi')}</span>`}
+          </button>`).join('')}
       </div>
+      <p class="hint">Haz clic en una red para conectarte.</p>`;
+  }
 
+  if (sec === 'dock') {
+    return `
+      <h3>Escritorio y Dock</h3>
+      <p class="sub">Ajusta el tamaño del Dock y su comportamiento.</p>
       <div class="row">
-        <div><b>Magnificación del Dock</b><small>Efecto al pasar el cursor</small></div>
-        <button class="switch on" data-switch="mag" aria-label="Magnificación"></button>
+        <div><b>Ocultar el Dock automáticamente</b><small>Aparece al acercar el cursor al borde inferior</small></div>
+        <button class="switch ${s.dockAuto ? 'on' : ''}" data-sys="dockAuto" aria-label="Dock automático"></button>
       </div>
-
       <div class="row">
-        <div><b>Animaciones</b><small>Transiciones y movimiento del sistema</small></div>
-        <button class="switch on" data-switch="anim" aria-label="Animaciones"></button>
+        <div><b>Magnificación</b><small>Amplía los iconos al pasar el cursor</small></div>
+        <button class="switch ${state.mag ? 'on' : ''}" data-sys="mag" aria-label="Magnificación"></button>
       </div>
-
       <div class="row">
-        <div><b>Sonidos del sistema</b><small>Efectos de interfaz</small></div>
-        <button class="switch on" data-switch="snd" aria-label="Sonidos"></button>
+        <div><b>Animaciones</b><small>Transiciones de ventanas y Dock</small></div>
+        <button class="switch ${state.anim ? 'on' : ''}" data-sys="anim" aria-label="Animaciones"></button>
       </div>
-
-      <div class="row">
-        <div><b>Modo oscuro automático</b><small>Según la hora del día</small></div>
-        <button class="switch" data-switch="auto" aria-label="Automático"></button>
+      <div class="range-row">
+        <label>Tamaño de los iconos <output>${s.dockSize} px</output></label>
+        <input type="range" min="36" max="72" value="${s.dockSize}" data-range="dockSize" aria-label="Tamaño del Dock">
       </div>
+      <p class="hint">Con el Dock oculto, mueve el cursor al borde inferior para mostrarlo.</p>`;
+  }
 
-      <h3 style="margin-top:22px">Ventanas</h3>
-      <p class="sub">Los botones se muestran a la izquierda, como en macOS.</p>
+  if (sec === 'sonido') {
+    return `
+      <h3>Sonido</h3>
+      <p class="sub">Volumen de salida y efectos del sistema.</p>
+      <div class="range-row">
+        <label>Volumen <output>${s.mute ? 0 : s.volume} %</output></label>
+        <input type="range" min="0" max="100" value="${s.mute ? 0 : s.volume}" data-range="volume" aria-label="Volumen">
+      </div>
       <div class="row">
-        <div><b>Botones de ventana</b><small>cerrar · minimizar · maximizar</small></div>
-        <span style="display:flex;gap:6px">
-          <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block"></span>
-          <span style="width:12px;height:12px;border-radius:50%;background:#febc2e;display:inline-block"></span>
-          <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block"></span>
-        </span>
+        <div><b>Silencio</b><small>Desactiva todo el audio de la demo</small></div>
+        <button class="switch ${s.mute ? 'on' : ''}" data-sys="mute" aria-label="Silencio"></button>
+      </div>
+      <div class="row">
+        <div><b>Sonidos del sistema</b><small>Efectos al probar el audio</small></div>
+        <button class="switch ${s.snd ? 'on' : ''}" data-sys="snd" aria-label="Sonidos del sistema"></button>
+      </div>
+      <h3 class="sub-title">Salida</h3>
+      <div class="device-list">
+        ${OUTPUT_DEVICES.map((d) => `
+          <button class="device-btn ${s.output === d ? 'on' : ''}" data-device="${escapeHtml(d)}">
+            ${icons('volume')}<span>${escapeHtml(d)}</span>
+            ${s.output === d ? `<span class="check">${icons('check')}</span>` : ''}
+          </button>`).join('')}
+      </div>
+      <div class="mail-actions">
+        <button class="btn" data-test-sound="1">${icons('volume')} Probar sonido</button>
+      </div>`;
+  }
+
+  if (sec === 'pantalla') {
+    return `
+      <h3>Pantalla</h3>
+      <p class="sub">Brillo, resolución y luz nocturna.</p>
+      <div class="range-row">
+        <label>Brillo <output>${s.brightness} %</output></label>
+        <input type="range" min="30" max="100" value="${s.brightness}" data-range="brightness" aria-label="Brillo">
+      </div>
+      <div class="row">
+        <div><b>Luz nocturna</b><small>Reduce la luz azul por la noche</small></div>
+        <button class="switch ${s.night ? 'on' : ''}" data-sys="night" aria-label="Luz nocturna"></button>
+      </div>
+      <h3 class="sub-title">Resolución</h3>
+      <div class="device-list">
+        ${RESOLUTIONS.map((r) => `
+          <button class="device-btn ${s.resolution === r ? 'on' : ''}" data-resolution="${r}">
+            ${icons('desktop')}<span>${r}</span>
+            ${s.resolution === r ? `<span class="check">${icons('check')}</span>` : ''}
+          </button>`).join('')}
+      </div>`;
+  }
+
+  if (sec === 'acerca') {
+    return `
+      <h3>Acerca de LiquidOS</h3>
+      <p class="sub">Información de esta compilación.</p>
+      <div class="about-inline">
+        <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
+        <h2>LiquidOS</h2>
+        <div class="ver">Versión 1.0 “Torrente” · edición de desarrollo</div>
+        <dl>
+          <dt>Base</dt><dd>Debian 12 (bookworm)</dd>
+          <dt>Escritorio</dt><dd>GNOME 46 · LiquidShell</dd>
+          <dt>Kernel</dt><dd>6.1 amd64</dd>
+          <dt>Licencia</dt><dd>GPL / MIT</dd>
+        </dl>
+      </div>
+      <div class="mail-actions">
+        <button class="btn primary" data-open-about="1">Abrir ventana</button>
+        <button class="btn" data-copy-info="1">Copiar información</button>
+        <button class="btn" data-shortcuts="1">Atajos</button>
+      </div>`;
+  }
+
+  return `
+    <h3>Apariencia</h3>
+    <p class="sub">Elige cómo se ve LiquidOS en este equipo.</p>
+    <div class="row">
+      <div><b>Tema</b><small>Claro u oscuro para todo el sistema</small></div>
+      <div class="seg2">
+        <button data-theme="light" class="${state.theme === 'light' ? 'on' : ''}">Claro</button>
+        <button data-theme="dark" class="${state.theme === 'dark' ? 'on' : ''}">Oscuro</button>
       </div>
     </div>
-  </div>`;
+    <div class="row">
+      <div><b>Modo oscuro automático</b><small>Según la hora del día</small></div>
+      <button class="switch ${s.autoDark ? 'on' : ''}" data-sys="autoDark" aria-label="Modo automático"></button>
+    </div>
+    <div class="row">
+      <div><b>Animaciones</b><small>Transiciones y movimiento del sistema</small></div>
+      <button class="switch ${state.anim ? 'on' : ''}" data-sys="anim" aria-label="Animaciones"></button>
+    </div>
+    <div class="row">
+      <div><b>Sonidos del sistema</b><small>Efectos de interfaz</small></div>
+      <button class="switch ${s.snd ? 'on' : ''}" data-sys="snd" aria-label="Sonidos"></button>
+    </div>
+    <div class="row">
+      <div><b>Botones de ventana</b><small>cerrar · minimizar · maximizar</small></div>
+      <span class="traffic-demo">
+        <span class="dot close"></span><span class="dot min"></span><span class="dot max"></span>
+      </span>
+    </div>
+    <p class="hint">Los botones se muestran a la izquierda, como en macOS.</p>`;
+}
+
+function wireSettings(win) {
+  const body = win.querySelector('.win-body');
+  const s = state.system;
+
+  $$('[data-section]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.views.ajustes.section = btn.dataset.section;
+      rerenderWindow('ajustes');
+    });
+  });
+
+  $$('[data-theme]', body).forEach((btn) => {
+    btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+  });
+
+  $$('[data-sys]', body).forEach((sw) => {
+    sw.addEventListener('click', () => toggleSystem(sw.dataset.sys));
+  });
+
+  $$('[data-range]', body).forEach((range) => {
+    paintRange(range);
+    range.addEventListener('input', () => {
+      const key = range.dataset.range;
+      const val = Number(range.value);
+      if (key === 'volume') {
+        s.volume = val;
+        s.mute = val === 0;
+      }
+      if (key === 'brightness') {
+        s.brightness = val;
+        applyBrightness();
+      }
+      if (key === 'dockSize') {
+        s.dockSize = val;
+        applyDockSize();
+      }
+      paintRange(range);
+      const out = range.closest('.range-row')?.querySelector('output');
+      if (out) out.textContent = key === 'dockSize' ? `${val} px` : `${val} %`;
+      syncControlCenter();
+    });
+  });
+
+  $$('[data-net]', body).forEach((btn) => {
+    btn.addEventListener('click', () => connectNetwork(btn.dataset.net));
+  });
+
+  $$('[data-device]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      s.output = btn.dataset.device;
+      rerenderWindow('ajustes');
+      toast(`Salida de audio: ${s.output}`);
+    });
+  });
+
+  $$('[data-resolution]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      s.resolution = btn.dataset.resolution;
+      rerenderWindow('ajustes');
+      toast(`Resolución: ${s.resolution} (simulada)`);
+    });
+  });
+
+  $$('[data-open-about]', body).forEach((btn) => {
+    btn.addEventListener('click', () => openAbout());
+  });
+
+  const copy = $('[data-copy-info]', body);
+  if (copy) {
+    copy.addEventListener('click', async () => {
+      const info = 'LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 46 · kernel 6.1 amd64';
+      try {
+        await navigator.clipboard.writeText(info);
+        toast('Información copiada al portapapeles');
+      } catch {
+        toast('El navegador bloqueó el portapapeles');
+      }
+    });
+  }
+
+  const shortcuts = $('[data-shortcuts]', body);
+  if (shortcuts) shortcuts.addEventListener('click', () => openShortcuts());
+
+  const test = $('[data-test-sound]', body);
+  if (test) test.addEventListener('click', () => beep(660));
+}
+
+/* ------------------------ Estado del sistema ------------------------ */
+
+function applyDockSize() {
+  const size = state.system.dockSize;
+  document.documentElement.style.setProperty('--dock-size', `${size}px`);
+  document.documentElement.style.setProperty('--dock-h', `${size + 16}px`);
+}
+
+function applyBrightness() {
+  const opacity = Math.max(0, (100 - state.system.brightness) / 100) * 0.6;
+  dimLayer.style.opacity = opacity.toFixed(3);
+}
+
+function applySystemClasses() {
+  const s = state.system;
+  document.body.classList.toggle('dock-auto', s.dockAuto);
+  document.body.classList.toggle('night', s.night);
+  document.body.classList.toggle('no-menubar', state.menubarHidden);
+  applyDockSize();
+  applyBrightness();
+}
+
+function syncControlCenter() {
+  const cc = $('#controlCenter');
+  if (!cc) return;
+  const s = state.system;
+
+  const tile = (key, on, text) => {
+    const btn = cc.querySelector(`[data-toggle="${key}"]`);
+    if (!btn) return;
+    btn.dataset.on = String(on);
+    const small = btn.querySelector('small');
+    if (small) small.textContent = text;
+  };
+
+  tile('wifi', s.wifi, s.wifi ? s.wifiNetwork : 'Desactivado');
+  tile('bt', s.bt, s.bt ? 'Conectado' : 'Apagado');
+  tile('dnd', s.dnd, s.dnd ? 'Activado' : 'Desactivado');
+
+  const label = $('#appearanceLabel');
+  if (label) label.textContent = state.theme === 'dark' ? 'Oscuro' : 'Claro';
+
+  const bright = $('#brightness');
+  if (bright) { bright.value = s.brightness; paintRange(bright); }
+  const vol = $('#volume');
+  if (vol) { vol.value = s.mute ? 0 : s.volume; paintRange(vol); }
+
+  const wifiBtn = $('#wifiBtn');
+  if (wifiBtn) {
+    wifiBtn.classList.toggle('off', !s.wifi);
+    wifiBtn.title = s.wifi ? `Wi-Fi: ${s.wifiNetwork}` : 'Wi-Fi desactivado';
+  }
+}
+
+function syncSettingsIfOpen() {
+  if (state.open.has('ajustes')) rerenderWindow('ajustes');
+}
+
+function toggleSystem(key) {
+  const s = state.system;
+  switch (key) {
+    case 'wifi':
+      s.wifi = !s.wifi;
+      toast(`Wi-Fi ${s.wifi ? 'activado' : 'desactivado'}`);
+      break;
+    case 'bt':
+      s.bt = !s.bt;
+      toast(`Bluetooth ${s.bt ? 'activado' : 'desactivado'}`);
+      break;
+    case 'dnd':
+      s.dnd = !s.dnd;
+      toast(`No molestar ${s.dnd ? 'activado' : 'desactivado'}`);
+      break;
+    case 'snd':
+      s.snd = !s.snd;
+      toast(`Sonidos del sistema ${s.snd ? 'activados' : 'desactivados'}`);
+      break;
+    case 'autoDark':
+      s.autoDark = !s.autoDark;
+      if (s.autoDark) {
+        const h = new Date().getHours();
+        setTheme(h >= 19 || h < 7 ? 'dark' : 'light');
+        toast('Apariencia automática activada');
+      } else {
+        toast('Apariencia automática desactivada');
+      }
+      break;
+    case 'dockAuto':
+      s.dockAuto = !s.dockAuto;
+      toast(s.dockAuto ? 'El Dock se ocultará solo' : 'Dock siempre visible');
+      break;
+    case 'mute':
+      s.mute = !s.mute;
+      if (s.mute) {
+        s.prevVolume = s.volume || 45;
+        s.volume = 0;
+      } else {
+        s.volume = s.prevVolume || 45;
+      }
+      toast(s.mute ? 'Silencio activado' : 'Sonido activado');
+      break;
+    case 'night':
+      s.night = !s.night;
+      toast(`Luz nocturna ${s.night ? 'activada' : 'desactivada'}`);
+      break;
+    case 'lowPower':
+      s.lowPower = !s.lowPower;
+      if (s.lowPower) s.brightness = Math.min(s.brightness, 60);
+      toast(`Bajo consumo ${s.lowPower ? 'activado' : 'desactivado'}`);
+      break;
+    case 'mag':
+      state.mag = !state.mag;
+      if (!state.mag) resetMagnify();
+      toast(`Magnificación ${state.mag ? 'activada' : 'desactivada'}`);
+      break;
+    case 'anim':
+      setAnim(!state.anim);
+      toast(`Animaciones ${state.anim ? 'activadas' : 'desactivadas'}`);
+      break;
+  }
+
+  applySystemClasses();
+  syncControlCenter();
+  syncSettingsIfOpen();
+  refreshFlyout();
+}
+
+function connectNetwork(name) {
+  const s = state.system;
+  if (!NETWORKS.some((n) => n.name === name)) return;
+  s.wifi = true;
+  s.wifiNetwork = name;
+  applySystemClasses();
+  syncControlCenter();
+  refreshFlyout();
+  if (state.open.has('ajustes')) rerenderWindow('ajustes');
+  toast(`Conectado a ${name}`);
+}
+
+/* ---------------------- Ventanas auxiliares ---------------------- */
+
+AUX_TITLES.acerca = 'Acerca de LiquidOS';
+AUX_TITLES.ayuda = 'Atajos de teclado';
+AUX_TITLES.manual = 'Manual de LiquidOS';
+
+function openAux(id, title, html, w = 470, h = 540) {
+  AUX_TITLES[id] = title;
+  if (state.open.has(id)) {
+    const entry = state.open.get(id);
+    if (entry.min) restoreWin(id);
+    else focusWin(id);
+    return;
+  }
+
+  const win = document.createElement('section');
+  win.className = 'window aux';
+  win.dataset.app = id;
+  win.style.width = Math.min(w, window.innerWidth - 40) + 'px';
+  win.style.height = Math.min(h, window.innerHeight - 120) + 'px';
+  win.style.left = 'calc(50% - ' + Math.min(w, window.innerWidth - 40) / 2 + 'px)';
+  win.style.top = '10vh';
+  win.innerHTML = `
+    <header class="window-head">
+      <div class="traffic">
+        <button class="dot close" title="Cerrar" aria-label="Cerrar"></button>
+        <button class="dot min" title="Minimizar" aria-label="Minimizar"></button>
+        <button class="dot max" title="Maximizar" aria-label="Maximizar"></button>
+      </div>
+      <div class="win-title">${title}</div>
+      <div></div>
+    </header>
+    <div class="win-body">${html}</div>`;
+
+  windowsLayer.appendChild(win);
+  state.open.set(id, { el: win, min: false, rect: null });
+  focusWin(id);
+  wireWindowChrome(win, id);
+  wireWindow(id, win);
+  return win;
 }
 
 function viewAbout() {
@@ -608,91 +2010,99 @@ function viewAbout() {
       <dt>Paquetes</dt><dd>~1 850</dd>
       <dt>Licencia</dt><dd>GPL / MIT</dd>
     </dl>
+    <div class="mail-actions">
+      <button class="btn primary" data-open-app="manual">Abrir manual</button>
+      <button class="btn" data-shortcuts="1">Atajos</button>
+      <button class="btn" data-copy-info="1">Copiar información</button>
+    </div>
   </div>`;
 }
 
-/* ---------------------------- Cableado interno ---------------------------- */
+const SHORTCUTS = [
+  ['Ctrl + Espacio', 'Abrir o cerrar Spotlight'],
+  ['↑ / ↓', 'Moverse por los resultados de Spotlight'],
+  ['Enter', 'Abrir el resultado seleccionado'],
+  ['Esc', 'Cerrar Spotlight, menús y paneles'],
+  ['Ctrl + W', 'Cerrar la ventana activa'],
+  ['Ctrl + M', 'Minimizar la ventana activa'],
+  ['Doble clic en la barra', 'Maximizar o restaurar la ventana'],
+  ['Arrastrar la barra', 'Mover la ventana'],
+  ['Clic derecho en el escritorio', 'Menú contextual'],
+  ['Clic en el reloj', 'Abrir el calendario'],
+  ['Clic en el Wi-Fi', 'Ver las redes disponibles']
+];
 
-function wireWindow(id, win) {
-  if (id === 'ajustes') {
-    win.querySelectorAll('#settingsTheme button').forEach((b) => {
-      b.addEventListener('click', () => setTheme(b.dataset.theme));
-    });
-    win.querySelectorAll('[data-switch]').forEach((sw) => {
-      sw.addEventListener('click', () => {
-        const on = !sw.classList.contains('on');
-        sw.classList.toggle('on', on);
-        if (sw.dataset.switch === 'mag') {
-          state.mag = on;
-          if (!on) resetMagnify();
-        }
-        if (sw.dataset.switch === 'anim') setAnim(on);
-      });
-    });
-    const about = win.querySelector('[data-open-about]');
-    if (about) about.addEventListener('click', () => openAbout());
-  }
-  if (id === 'notas') {
-    win.querySelectorAll('.note-item').forEach((n) => {
-      n.addEventListener('click', () => {
-        win.querySelectorAll('.note-item').forEach((x) => x.classList.remove('on'));
-        n.classList.add('on');
-      });
-    });
-  }
+function viewShortcuts() {
+  return `
+  <div class="doc-view">
+    <h2>Atajos de teclado</h2>
+    <p class="lead">Todo lo que puedes hacer sin levantar las manos del teclado.</p>
+    <ul class="shortcut-list">
+      ${SHORTCUTS.map(([key, what]) => `<li><kbd>${key}</kbd><span>${what}</span></li>`).join('')}
+    </ul>
+    <div class="mail-actions">
+      <button class="btn primary" data-open-app="manual">Abrir manual</button>
+      <button class="btn" data-open-app="ajustes">Ajustes del sistema</button>
+    </div>
+  </div>`;
 }
 
-function openAbout() {
-  const id = 'acerca';
-  if (state.open.has(id)) return focusWin(id);
-  const win = document.createElement('section');
-  win.className = 'window';
-  win.dataset.app = id;
-  win.style.width = '420px';
-  win.style.height = '400px';
-  win.style.left = 'calc(50% - 210px)';
-  win.style.top = '12vh';
-  win.innerHTML = `
-    <header class="window-head">
-      <div class="traffic">
-        <button class="dot close" aria-label="Cerrar"></button>
-        <button class="dot min" aria-label="Minimizar"></button>
-        <button class="dot max" aria-label="Maximizar"></button>
-      </div>
-      <div class="win-title">Acerca de LiquidOS</div>
-      <div></div>
-    </header>
-    <div class="win-body">${viewAbout()}</div>`;
-  windowsLayer.appendChild(win);
-  state.open.set(id, { el: win, min: false, rect: null });
-  focusWin(id);
-  win.querySelector('.dot.close').addEventListener('click', () => closeWin(id));
-  win.querySelector('.dot.min').addEventListener('click', () => animateMinimize(id));
-  win.querySelector('.dot.max').addEventListener('click', () => toggleMax(id));
-  win.querySelector('.window-head').addEventListener('pointerdown', (e) => startDrag(e, win, id));
-  win.addEventListener('pointerdown', () => focusWin(id), true);
+function viewManual() {
+  return `
+  <div class="doc-view">
+    <h2>Manual de LiquidOS</h2>
+    <p class="lead">Guía rápida de esta demostración interactiva.</p>
+
+    <h3>El escritorio</h3>
+    <p>La barra superior reúne el menú de LiquidOS, el nombre de la app activa, los indicadores del sistema y el reloj. El Dock muestra las aplicaciones: un punto indica que están abiertas y al hacer clic se abren o se restauran.</p>
+
+    <h3>Ventanas</h3>
+    <p>Arrastra la barra de título para mover una ventana, haz doble clic para maximizarla y usa los tres botones de la izquierda para cerrar, minimizar y maximizar. Minimizar reproduce el efecto genio hacia el Dock.</p>
+
+    <h3>Spotlight</h3>
+    <p>Pulsa <b>Ctrl + Espacio</b> (o el icono de la lupa) para buscar aplicaciones, secciones de Ajustes y archivos. Los resultados se abren con <b>Enter</b>.</p>
+
+    <h3>Apariencia</h3>
+    <p>El Centro de control cambia entre modo claro y oscuro, ajusta el brillo y el volumen y activa Wi-Fi, Bluetooth o No molestar. En <b>Ajustes → Escritorio y Dock</b> puedes cambiar el tamaño del Dock y ocultarlo automáticamente.</p>
+
+    <h3>Compilar la ISO</h3>
+    <p>La imagen se construye con live-build sobre Debian 12. Ejecuta <b>make iso</b> en Linux o usa el flujo de GitHub Actions incluido en el repositorio. El resultado aparece en <b>dist/LiquidOS-1.0-amd64.iso</b>.</p>
+
+    <div class="mail-actions">
+      <button class="btn primary" data-open-app="archivos">Explorar archivos</button>
+      <button class="btn" data-open-app="ajustes">Ajustes del sistema</button>
+      <button class="btn" data-shortcuts="1">Ver atajos</button>
+    </div>
+  </div>`;
 }
 
-function setAnim(on) {
-  state.anim = on;
-  document.body.classList.toggle('no-anim', !on);
-}
+function openAbout() { return openAux('acerca', 'Acerca de LiquidOS', viewAbout(), 460, 600); }
+function openShortcuts() { return openAux('ayuda', 'Atajos de teclado', viewShortcuts(), 520, 560); }
+function openManual() { return openAux('manual', 'Manual de LiquidOS', viewManual(), 600, 600); }
 
-/* ---------------------------- Tema ---------------------------- */
-
-function setTheme(mode) {
-  state.theme = mode;
-  document.body.classList.toggle('light', mode === 'light');
-  document.body.classList.toggle('dark', mode === 'dark');
-
-  const label = $('#appearanceLabel');
-  if (label) label.textContent = mode === 'dark' ? 'Oscuro' : 'Claro';
-
-  const tile = $('#ccThemeTile');
-  if (tile) tile.dataset.on = 'true';
-
-  document.querySelectorAll('.seg button, .seg2 button').forEach((b) => {
-    b.classList.toggle('on', b.dataset.theme === mode);
+function wireAux(win) {
+  const body = win.querySelector('.win-body');
+  $$('[data-open-app]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.openApp;
+      if (target === 'manual') return openManual();
+      if (target === 'ayuda') return openShortcuts();
+      if (target === 'acerca') return openAbout();
+      openApp(target);
+    });
+  });
+  $$('[data-shortcuts]', body).forEach((btn) => {
+    btn.addEventListener('click', () => openShortcuts());
+  });
+  $$('[data-copy-info]', body).forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText('LiquidOS 1.0 «Torrente» · Debian 12 · GNOME 46 · kernel 6.1 amd64');
+        toast('Información copiada al portapapeles');
+      } catch {
+        toast('El navegador bloqueó el portapapeles');
+      }
+    });
   });
 }
 
@@ -705,45 +2115,79 @@ let spotIndex = 0;
 let spotList = [];
 
 function searchTargets() {
-  const extra = [
-    { id: 'acerca', name: 'Acerca de LiquidOS', glyph: 'doc', c1: '#7cc3ff', c2: '#3b6fd8', hint: 'Sistema' },
-    { id: 'ajustes', name: 'Ajustes · Apariencia', glyph: 'settings', c1: '#c9d1e0', c2: '#7d8798', hint: 'Ajustes' },
-    { id: 'ajustes', name: 'Ajustes · Wi-Fi', glyph: 'wifi', c1: '#c9d1e0', c2: '#7d8798', hint: 'Ajustes' }
+  const apps = APPS.map((a) => ({
+    id: a.id, name: a.name, glyph: a.glyph, c1: a.c1, c2: a.c2,
+    hint: 'Aplicación', run: () => openApp(a.id)
+  }));
+
+  const secs = SETTINGS_SECTIONS.map((s) => ({
+    id: `ajustes-${s.id}`, name: `Ajustes · ${s.label}`, glyph: s.glyph, c1: '#c9d1e0', c2: '#7d8798',
+    hint: 'Ajustes', run: () => openApp('ajustes', { section: s.id })
+  }));
+
+  const extras = [
+    { id: 'tema', name: 'Cambiar apariencia', glyph: 'moon', c1: '#9d8bff', c2: '#5b46c8', hint: 'Sistema', run: () => {
+      setTheme(state.theme === 'dark' ? 'light' : 'dark');
+      toast(`Apariencia ${state.theme === 'dark' ? 'oscura' : 'clara'}`);
+    } },
+    { id: 'manual', name: 'Manual de LiquidOS', glyph: 'doc', c1: '#7cc3ff', c2: '#3b6fd8', hint: 'Ayuda', run: () => openManual() },
+    { id: 'ayuda', name: 'Atajos de teclado', glyph: 'grid', c1: '#8fd4c8', c2: '#2b9080', hint: 'Ayuda', run: () => openShortcuts() },
+    { id: 'acerca', name: 'Acerca de LiquidOS', glyph: 'doc', c1: '#9cc6ff', c2: '#3b6fd8', hint: 'Sistema', run: () => openAbout() },
+    { id: 'capturas', name: 'Capturas', glyph: 'image', c1: '#ffd48f', c2: '#f09a3c', hint: 'Carpeta', run: () => openApp('archivos', { path: 'capturas' }) },
+    { id: 'papelera', name: 'Papelera', glyph: 'trash', c1: '#b8c6db', c2: '#7d8ba1', hint: 'Sistema', run: () => toast('La papelera está vacía · 0 elementos') }
   ];
-  return [...APPS, ...extra];
+
+  const files = [];
+  Object.entries(FS).forEach(([path, dir]) => {
+    dir.items.forEach((it) => {
+      if (it.type === 'folder') return;
+      files.push({
+        id: `file-${path}-${it.name}`,
+        name: it.name,
+        glyph: it.type === 'img' ? 'image' : it.type === 'aud' ? 'music' : 'doc',
+        c1: '#c9d1e0', c2: '#7d8798',
+        hint: dir.label,
+        run: () => {
+          openApp('archivos', { path });
+          if (it.type === 'aud') openApp('musica');
+          if (it.type === 'doc') openApp('notas');
+          toast(`Abriendo «${it.name}»`);
+        }
+      });
+    });
+  });
+
+  return [...apps, ...secs, ...extras, ...files];
 }
 
 function openSpotlight() {
-  $('#menuPop').hidden = true;
-  $('#controlCenter').hidden = true;
+  closeMenus();
   spot.hidden = false;
   spotInput.value = '';
   renderSpotResults('');
-  setTimeout(() => spotInput.focus(), 20);
+  setTimeout(() => spotInput.focus(), 30);
 }
 
-function closeSpotlight() {
-  spot.hidden = true;
-}
+function closeSpotlight() { spot.hidden = true; }
 
 function renderSpotResults(q) {
   const query = q.trim().toLowerCase();
-  spotList = searchTargets().filter((t) => !query || t.name.toLowerCase().includes(query));
+  spotList = searchTargets().filter((t) => !query || t.name.toLowerCase().includes(query) || (t.hint || '').toLowerCase().includes(query));
   spotIndex = 0;
 
   if (!spotList.length) {
-    spotResults.innerHTML = '<li class="spot-empty">Sin resultados para “' + escapeHtml(q) + '”</li>';
+    spotResults.innerHTML = `<li class="spot-empty">Sin resultados para «${escapeHtml(q)}»</li>`;
     return;
   }
 
   spotResults.innerHTML = spotList.map((t, i) => `
     <li data-i="${i}" class="${i === 0 ? 'sel' : ''}">
       <span class="mini app-icon" style="--c1:${t.c1};--c2:${t.c2}">${svg(t.glyph)}</span>
-      <span>${t.name}</span>
-      <small>${t.hint || 'Aplicación'}</small>
+      <span>${escapeHtml(t.name)}</span>
+      <small>${escapeHtml(t.hint || 'Aplicación')}</small>
     </li>`).join('');
 
-  spotResults.querySelectorAll('li[data-i]').forEach((li) => {
+  $$('li[data-i]', spotResults).forEach((li) => {
     li.addEventListener('click', () => launchSpot(Number(li.dataset.i)));
   });
 }
@@ -752,129 +2196,290 @@ function launchSpot(i) {
   const t = spotList[i];
   if (!t) return;
   closeSpotlight();
-  if (t.id === 'acerca') return openAbout();
-  openApp(t.id);
-}
-
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  spotInput.blur();
+  if (typeof t.run === 'function') t.run();
+  else openApp(t.id);
 }
 
 function moveSpot(dir) {
   if (!spotList.length) return;
   spotIndex = (spotIndex + dir + spotList.length) % spotList.length;
   [...spotResults.children].forEach((li, i) => li.classList.toggle('sel', i === spotIndex));
+  const active = spotResults.children[spotIndex];
+  if (active) active.scrollIntoView({ block: 'nearest' });
 }
 
-/* ---------------------------- Centro de control ---------------------------- */
+/* ------------------------ Cableado de ventanas ------------------------ */
 
-function setupControlCenter() {
-  const cc = $('#controlCenter');
-
-  $('#controlBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    cc.hidden = !cc.hidden;
-    $('#menuPop').hidden = true;
-  });
-
-  cc.addEventListener('click', (e) => e.stopPropagation());
-
-  cc.querySelectorAll('[data-toggle]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const on = btn.dataset.on !== 'true';
-      btn.dataset.on = String(on);
-      const small = btn.querySelector('small');
-      const key = btn.dataset.toggle;
-      if (small) {
-        small.textContent = key === 'wifi' ? (on ? 'liquido-5G' : 'Desactivado')
-          : key === 'bt' ? (on ? 'Conectado' : 'Apagado')
-          : (on ? 'Activado' : 'Desactivado');
-      }
-      const titles = { wifi: 'Wi-Fi', bt: 'Bluetooth', dnd: 'No molestar' };
-      toast(`${titles[key]}: ${on ? 'activado' : 'desactivado'}`);
-    });
-  });
-
-  cc.querySelectorAll('[data-theme]').forEach((b) => {
-    b.addEventListener('click', () => setTheme(b.dataset.theme));
-  });
-
-  const themeTile = $('#ccThemeTile');
-  if (themeTile) {
-    themeTile.addEventListener('click', () => {
-      setTheme(state.theme === 'dark' ? 'light' : 'dark');
-      toast(`Apariencia: ${state.theme === 'dark' ? 'Oscura' : 'Clara'}`);
-    });
+function wireWindow(id, win) {
+  switch (id) {
+    case 'archivos': wireFinder(win); break;
+    case 'navegador': wireBrowser(win); break;
+    case 'correo': wireMail(win); break;
+    case 'notas': wireNotes(win); break;
+    case 'musica': wireMusic(win); break;
+    case 'terminal': wireTerminal(win); break;
+    case 'ajustes': wireSettings(win); break;
+    case 'acerca':
+    case 'ayuda':
+    case 'manual': wireAux(win); break;
+    default: break;
   }
-
-  const paintRange = (input) => {
-    const min = Number(input.min) || 0;
-    const max = Number(input.max) || 100;
-    const pct = ((Number(input.value) - min) / (max - min)) * 100;
-    input.style.setProperty('--fill', pct.toFixed(1) + '%');
-  };
-
-  ['#brightness', '#volume'].forEach((sel) => {
-    const input = $(sel);
-    if (!input) return;
-    paintRange(input);
-    input.addEventListener('input', () => paintRange(input));
-  });
-
-  const vol = $('#volume');
-  vol.addEventListener('input', () => toast(`Volumen ${vol.value}%`));
-
-  const bright = $('#brightness');
-  const dim = document.createElement('div');
-  dim.className = 'dim-layer';
-  dim.style.cssText = 'position:absolute;inset:0;background:#000;pointer-events:none;z-index:890;transition:opacity .15s linear;opacity:0';
-  document.body.appendChild(dim);
-  const applyBright = () => {
-    const v = Number(bright.value);
-    dim.style.opacity = String(Math.max(0, (100 - v) / 100) * 0.55);
-  };
-  bright.addEventListener('input', applyBright);
-  applyBright();
 }
 
-/* ---------------------------- Menú superior ---------------------------- */
+/* ------------------------ Iconos del escritorio ------------------------ */
+
+const DESKTOP_ICONS = [
+  { key: 'equipo', label: 'LiquidOS', glyph: 'desktop', c1: '#9cc6ff', c2: '#3b6fd8', run: () => openApp('archivos', { path: 'inicio' }) },
+  { key: 'documentos', label: 'Documentos', glyph: 'folder', c1: '#6fc0ff', c2: '#1a6fe0', run: () => openApp('archivos', { path: 'documentos' }) },
+  { key: 'capturas', label: 'Capturas', glyph: 'image', c1: '#ffd48f', c2: '#f09a3c', run: () => openApp('archivos', { path: 'capturas' }) },
+  { key: 'leeme', label: 'Léeme.txt', glyph: 'doc', c1: '#dfe6f2', c2: '#98a4b8', run: () => openApp('notas') },
+  { key: 'iso', label: 'LiquidOS.iso', glyph: 'download', c1: '#b8c6db', c2: '#7d8ba1', run: () => openApp('archivos', { path: 'descargas' }) }
+];
+
+function buildDesktopIcons() {
+  if (!desktopIconsEl) return;
+  desktopIconsEl.innerHTML = DESKTOP_ICONS.map((ic) => `
+    <button class="desk-icon" data-desk="${ic.key}" title="${ic.label}">
+      <span class="desk-glyph" style="--c1:${ic.c1};--c2:${ic.c2}">${svg(ic.glyph)}</span>
+      <span class="desk-label">${ic.label}</span>
+    </button>`).join('');
+
+  $$('.desk-icon', desktopIconsEl).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.desk-icon', desktopIconsEl).forEach((b) => b.classList.toggle('on', b === btn));
+    });
+    btn.addEventListener('dblclick', () => {
+      const ic = DESKTOP_ICONS.find((x) => x.key === btn.dataset.desk);
+      if (ic) ic.run();
+    });
+  });
+}
+
+/* ---------------------------- Menús ---------------------------- */
+
+let folderN = 1;
+
+function createDesktopFolder() {
+  const name = `Carpeta ${folderN++}`;
+  FS.escritorio.items.push({ name, type: 'folder', to: 'escritorio' });
+  DESKTOP_ICONS.push({
+    key: `carpeta-${Date.now()}`,
+    label: name,
+    glyph: 'folder',
+    c1: '#6fc0ff',
+    c2: '#1a6fe0',
+    run: () => openApp('archivos', { path: 'escritorio' })
+  });
+  buildDesktopIcons();
+  toast(`«${name}» creada en el escritorio`);
+}
+
+function focusedId() {
+  const list = [...state.open.entries()]
+    .sort((a, b) => Number(b[1].el.style.zIndex || 0) - Number(a[1].el.style.zIndex || 0));
+  const found = list.find(([, v]) => v.el.classList.contains('focused'));
+  return found ? found[0] : null;
+}
+
+function closeFocused(minimize = false) {
+  const id = focusedId();
+  if (!id) { toast('No hay ninguna ventana activa'); return; }
+  if (minimize) animateMinimize(id);
+  else closeWin(id);
+}
+
+function toggleFocusedMax() {
+  const id = focusedId();
+  if (!id) { toast('No hay ninguna ventana activa'); return; }
+  focusWin(id);
+  toggleMax(id);
+}
+
+function minimizeAll() {
+  if (!state.open.size) { toast('No hay ventanas abiertas'); return; }
+  [...state.open.keys()].forEach((id) => animateMinimize(id));
+  toast('Ventanas minimizadas');
+}
+
+function closeAll() {
+  if (!state.open.size) { toast('No hay ventanas abiertas'); return; }
+  [...state.open.keys()].forEach((id) => closeWin(id));
+}
+
+function toggleMenubar() {
+  state.menubarHidden = !state.menubarHidden;
+  applySystemClasses();
+  toast(state.menubarHidden ? 'Barra de menús oculta · acércate al borde superior' : 'Barra de menús visible');
+}
+
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch {
+    toast('El navegador bloqueó la pantalla completa');
+  }
+}
+
+function editAction(cmd) {
+  const el = document.activeElement;
+  const editable = el && (el.isContentEditable || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+  if (!editable) { toast('Primero enfoca un campo de texto'); return; }
+  if (cmd === 'paste') { toast('Usa Ctrl + V para pegar'); return; }
+  let ok = false;
+  try { ok = document.execCommand(cmd); } catch { ok = false; }
+  if (ok && cmd === 'copy') toast('Copiado al portapapeles');
+  else if (ok && cmd === 'cut') toast('Cortado al portapapeles');
+  else if (!ok && cmd !== 'selectAll') toast('Esta acción no está disponible en el navegador');
+}
+
+function lockScreen() {
+  if ($('.lock-screen')) return;
+  const ov = document.createElement('div');
+  ov.className = 'lock-screen';
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  const date = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  ov.innerHTML = `
+    <div class="lock-inner">
+      <div class="lock-time">${time}</div>
+      <div class="lock-date">${date}</div>
+      <div class="lock-user">
+        <span class="lock-avatar">S</span>
+        <b>Sebastián</b>
+        <small>LiquidOS · sesión local</small>
+      </div>
+      <button class="btn primary" data-unlock>Desbloquear</button>
+      <small class="lock-hint">Pulsa Enter o haz clic para volver</small>
+    </div>`;
+  desktop.appendChild(ov);
+
+  const unlock = () => {
+    ov.classList.add('out');
+    setTimeout(() => ov.remove(), 260);
+    window.removeEventListener('keydown', onKey);
+    toast('Sesión desbloqueada');
+  };
+  const onKey = (e) => {
+    if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ') { e.preventDefault(); unlock(); }
+  };
+  ov.querySelector('[data-unlock]').addEventListener('click', unlock);
+  ov.addEventListener('click', (e) => { if (e.target === ov) unlock(); });
+  window.addEventListener('keydown', onKey);
+}
+
+function shutdownDemo(mode) {
+  if ($('.shutdown-screen')) return;
+  const restart = mode === 'restart';
+  const ov = document.createElement('div');
+  ov.className = 'shutdown-screen';
+  ov.innerHTML = `
+    <div class="shutdown-inner">
+      <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
+      <h2>${restart ? 'Reiniciando…' : 'Apagando…'}</h2>
+      <p>${restart ? 'Volviendo a iniciar LiquidOS.' : 'Puedes encender el equipo de nuevo cuando quieras.'}</p>
+      <div class="spinner" aria-hidden="true"></div>
+      ${restart ? '' : '<button class="btn primary" data-power-on>Encender</button>'}
+    </div>`;
+  desktop.appendChild(ov);
+
+  if (restart) {
+    setTimeout(() => location.reload(), 2000);
+  } else {
+    ov.querySelector('[data-power-on]').addEventListener('click', () => location.reload());
+  }
+}
+
+function createNote() {
+  const v = state.views.notas;
+  v.notes.push({
+    title: 'Nueva nota',
+    preview: 'Empieza a escribir…',
+    html: `<h2>Nueva nota</h2><div class="date">${todayLabel()}</div><p>Empieza a escribir…</p>`
+  });
+  v.index = v.notes.length - 1;
+  if (state.open.has('notas')) rerenderWindow('notas');
+  else openApp('notas');
+  const ed = $('#windows .window[data-app="notas"] [data-note-body]');
+  if (ed) ed.focus();
+  toast('Nota creada');
+}
 
 const APPLE_MENU = [
   ['Acerca de LiquidOS', () => openAbout(), ''],
-  ['Ajustes del Sistema…', () => openApp('ajustes'), ''],
+  ['Manual de LiquidOS', () => openManual(), ''],
+  ['Ajustes del Sistema…', () => openApp('ajustes'), '⌘,'],
   ['—', null, ''],
-  ['Suspender', () => toast('Suspender no está disponible en la demo'), ''],
-  ['Reiniciar…', () => toast('Reiniciar: demo'), ''],
-  ['Apagar…', () => toast('Apagar: demo'), '']
+  ['Bloquear pantalla', () => lockScreen(), '⌃⌘Q'],
+  ['Reiniciar…', () => shutdownDemo('restart'), ''],
+  ['Apagar…', () => shutdownDemo('power'), '']
 ];
 
 const GENERIC_MENU = {
-  Archivo: [['Nueva ventana', () => openApp('archivos'), '⌘N'], ['Cerrar ventana', () => closeFocused(), '⌘W'], ['—'], ['Imprimir…', null, '⌘P']],
-  Editar: [['Deshacer', null, '⌘Z'], ['Rehacer', null, '⇧⌘Z'], ['—'], ['Cortar', null, '⌘X'], ['Copiar', null, '⌘C'], ['Pegar', null, '⌘V']],
-  Ver: [['Vista previa del escritorio', null, ''], ['Pantalla completa', null, '⌃⌘F'], ['—'], ['Mostrar barra de menús', null, '']],
-  Ventana: [['Minimizar', () => closeFocused(true), '⌘M'], ['Zoom', null, ''], ['—'], ['Traer todo al frente', null, '']],
-  Ayuda: [['Manual de LiquidOS', () => toast('Manual disponible en docs/'), ''], ['Atajos de teclado', () => toast('Ctrl+Espacio · Esc · ⌘W'), ''], ['—'], ['Acerca de LiquidOS', () => openAbout(), '']]
+  Archivo: [
+    ['Nueva ventana', () => openApp('archivos'), '⌘N'],
+    ['Nueva nota', () => createNote(), ''],
+    ['Cerrar ventana', () => closeFocused(), '⌘W'],
+    ['—', null, ''],
+    ['Imprimir…', () => window.print(), '⌘P']
+  ],
+  Editar: [
+    ['Deshacer', () => editAction('undo'), '⌘Z'],
+    ['Rehacer', () => editAction('redo'), '⇧⌘Z'],
+    ['—', null, ''],
+    ['Cortar', () => editAction('cut'), '⌘X'],
+    ['Copiar', () => editAction('copy'), '⌘C'],
+    ['Pegar', () => editAction('paste'), '⌘V'],
+    ['Seleccionar todo', () => editAction('selectAll'), '⌘A']
+  ],
+  Ver: [
+    ['Modo claro / oscuro', () => {
+      setTheme(state.theme === 'dark' ? 'light' : 'dark');
+      toast(`Apariencia ${state.theme === 'dark' ? 'oscura' : 'clara'}`);
+    }, ''],
+    ['Mostrar u ocultar la barra de menús', () => toggleMenubar(), ''],
+    ['Pantalla completa', () => toggleFullscreen(), '⌃⌘F'],
+    ['—', null, ''],
+    ['Minimizar todas las ventanas', () => minimizeAll(), '']
+  ],
+  Ventana: [
+    ['Minimizar', () => closeFocused(true), '⌘M'],
+    ['Zoom', () => toggleFocusedMax(), '⌃⌘Z'],
+    ['—', null, ''],
+    ['Cerrar todas las ventanas', () => closeAll(), '']
+  ],
+  Ayuda: [
+    ['Manual de LiquidOS', () => openManual(), ''],
+    ['Atajos de teclado', () => openShortcuts(), ''],
+    ['—', null, ''],
+    ['Acerca de LiquidOS', () => openAbout(), '']
+  ]
 };
 
-function closeFocused(minimize = false) {
-  const focused = [...state.open.entries()].find(([, v]) => v.el.classList.contains('focused'));
-  if (!focused) return;
-  if (minimize) animateMinimize(focused[0]);
-  else closeWin(focused[0]);
-}
-
-function showMenu(x, y, items) {
+function showMenu(x, y, items, owner = '') {
   const pop = $('#menuPop');
+  if (!pop.hidden && pop.dataset.owner === owner) { pop.hidden = true; return; }
+  pop.dataset.owner = owner;
+
   pop.innerHTML = items.map(([label, fn, hint]) => {
     if (label === '—') return '<hr>';
-    return `<button data-item>${label}<span>${hint || ''}</span></button>`;
+    return `<button data-item ${fn ? '' : 'disabled'}>${label}<span>${hint || ''}</span></button>`;
   }).join('');
 
   pop.hidden = false;
-  pop.style.left = Math.min(x, window.innerWidth - 250) + 'px';
-  pop.style.top = y + 'px';
+  pop.style.left = '0px';
+  pop.style.top = '0px';
+  const w = pop.offsetWidth;
+  const h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + 'px';
+  pop.style.top = Math.max(8, Math.min(y, window.innerHeight - h - 8)) + 'px';
 
-  const buttons = [...pop.querySelectorAll('button[data-item]')];
+  flyout.hidden = true;
+  flyoutKind = null;
+  $('#controlCenter').hidden = true;
+
+  const buttons = $$('button[data-item]', pop);
   const real = items.filter((i) => i[0] !== '—');
   buttons.forEach((b, i) => {
     b.addEventListener('click', () => {
@@ -885,46 +2490,59 @@ function showMenu(x, y, items) {
   });
 }
 
-function setupMenus() {
-  $('#appleBtn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    const r = e.currentTarget.getBoundingClientRect();
-    showMenu(r.left - 6, 36, APPLE_MENU);
-    $('#controlCenter').hidden = true;
-  });
+function closeMenus() {
+  $('#menuPop').hidden = true;
+  $('#controlCenter').hidden = true;
+  flyout.hidden = true;
+  flyoutKind = null;
+  flyoutAnchor = null;
+}
 
-  document.querySelectorAll('.menus button').forEach((b) => {
+function setupMenus() {
+  const apple = $('#appleBtn');
+  if (apple) {
+    apple.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const r = apple.getBoundingClientRect();
+      showMenu(r.left, r.bottom + 6, APPLE_MENU, 'apple');
+    });
+  }
+
+  $$('.menus button').forEach((b) => {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
-      const r = e.currentTarget.getBoundingClientRect();
-      showMenu(r.left, 34, GENERIC_MENU[b.dataset.menu] || []);
-      $('#controlCenter').hidden = true;
+      const r = b.getBoundingClientRect();
+      showMenu(r.left, r.bottom + 4, GENERIC_MENU[b.dataset.menu] || [], b.dataset.menu);
     });
   });
 
-  $('#searchBtn').addEventListener('click', openSpotlight);
+  const search = $('#searchBtn');
+  if (search) search.addEventListener('click', (e) => { e.stopPropagation(); openSpotlight(); });
 
-  // Menú contextual del escritorio
   desktop.addEventListener('contextmenu', (e) => {
-    if (e.target.closest('.window, .menubar, .dock, .spotlight, .control-center, .menu-pop')) return;
+    if (e.target.closest('.window, .menubar, .dock-wrap, .spotlight, .control-center, .menu-pop, .flyout, .lock-screen, .shutdown-screen, .desk-icon')) return;
     e.preventDefault();
-    showMenu(e.clientX - 14, e.clientY - 8, [
-      ['Nueva carpeta', () => toast('Carpeta creada en el Escritorio'), '⇧⌘N'],
+    showMenu(e.clientX, e.clientY, [
+      ['Nueva carpeta', () => createDesktopFolder(), '⇧⌘N'],
       ['Cambiar fondo de pantalla', () => {
         setTheme(state.theme === 'dark' ? 'light' : 'dark');
         toast('Fondo actualizado');
       }, ''],
+      ['Ordenar iconos', () => { buildDesktopIcons(); toast('Iconos ordenados por nombre'); }, ''],
       ['—', null, ''],
       ['Ajustes del Sistema…', () => openApp('ajustes'), ''],
       ['Mostrar Spotlight', () => openSpotlight(), '⌃Space'],
-      ['—', null, ''],
-      ['Ordenar iconos', () => toast('Iconos ordenados por nombre'), '']
-    ]);
+      ['Manual de LiquidOS', () => openManual(), '']
+    ], 'desktop');
   });
 
-  document.addEventListener('click', () => {
-    $('#menuPop').hidden = true;
-    $('#controlCenter').hidden = true;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.menu-pop, .control-center, .flyout')) return;
+    closeMenus();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!flyout.hidden && flyoutAnchor) flyoutPosition(flyoutAnchor);
   });
 
   window.addEventListener('keydown', (e) => {
@@ -932,9 +2550,11 @@ function setupMenus() {
 
     if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
       e.preventDefault();
-      spotOpen ? closeSpotlight() : openSpotlight();
+      if (spotOpen) closeSpotlight();
+      else openSpotlight();
       return;
     }
+
     if (spotOpen) {
       if (e.key === 'Escape') { e.preventDefault(); closeSpotlight(); }
       else if (e.key === 'ArrowDown') { e.preventDefault(); moveSpot(1); }
@@ -942,13 +2562,20 @@ function setupMenus() {
       else if (e.key === 'Enter') { e.preventDefault(); launchSpot(spotIndex); }
       return;
     }
+
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'w') {
       e.preventDefault();
       closeFocused();
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'm') {
+      e.preventDefault();
+      closeFocused(true);
+      return;
     }
     if (e.key === 'Escape') {
-      $('#menuPop').hidden = true;
-      $('#controlCenter').hidden = true;
+      closeMenus();
+      spot.hidden = true;
     }
   });
 
@@ -956,12 +2583,225 @@ function setupMenus() {
     if (e.target === spot) closeSpotlight();
   });
   spotInput.addEventListener('input', () => renderSpotResults(spotInput.value));
+  spotInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); launchSpot(spotIndex); }
+  });
+}
+
+/* ---------------------------- Centro de control ---------------------------- */
+
+function setupControlCenter() {
+  const cc = $('#controlCenter');
+  if (!cc) return;
+
+  const controlBtn = $('#controlBtn');
+  if (controlBtn) {
+    controlBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = cc.hidden;
+      closeMenus();
+      cc.hidden = !willOpen;
+      if (willOpen) { syncControlCenter(); beep(540); }
+    });
+  }
+
+  cc.addEventListener('click', (e) => e.stopPropagation());
+
+  $$('[data-toggle]', cc).forEach((btn) => {
+    btn.addEventListener('click', () => toggleSystem(btn.dataset.toggle));
+  });
+
+  $$('[data-theme]', cc).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setTheme(btn.dataset.theme);
+      toast(`Apariencia ${btn.dataset.theme === 'dark' ? 'oscura' : 'clara'}`);
+    });
+  });
+
+  const themeTile = $('#ccThemeTile');
+  if (themeTile) {
+    themeTile.addEventListener('click', () => {
+      setTheme(state.theme === 'dark' ? 'light' : 'dark');
+      toast(`Apariencia ${state.theme === 'dark' ? 'oscura' : 'clara'}`);
+    });
+  }
+
+  const bright = $('#brightness');
+  if (bright) {
+    paintRange(bright);
+    bright.addEventListener('input', () => {
+      state.system.brightness = Number(bright.value);
+      applyBrightness();
+      paintRange(bright);
+      syncSettingsIfOpen();
+    });
+  }
+
+  const vol = $('#volume');
+  if (vol) {
+    paintRange(vol);
+    vol.addEventListener('input', () => {
+      state.system.volume = Number(vol.value);
+      state.system.mute = state.system.volume === 0;
+      paintRange(vol);
+      syncSettingsIfOpen();
+    });
+    vol.addEventListener('change', () => beep(760));
+  }
+
+  const wifiBtn = $('#wifiBtn');
+  if (wifiBtn) wifiBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlyout('wifi', wifiBtn); });
+
+  const batteryBtn = $('#batteryBtn');
+  if (batteryBtn) batteryBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlyout('battery', batteryBtn); });
+
+  const clockBtn = $('#clock');
+  if (clockBtn) clockBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFlyout('calendar', clockBtn); });
+
+  flyout.addEventListener('click', (e) => e.stopPropagation());
+}
+
+/* ---------------------------- Paneles emergentes ---------------------------- */
+
+let flyoutKind = null;
+let flyoutAnchor = null;
+
+function flyoutPosition(anchor) {
+  const r = anchor.getBoundingClientRect();
+  const width = 312;
+  flyout.style.left = Math.max(12, Math.min(r.right - width, window.innerWidth - width - 12)) + 'px';
+  flyout.style.top = (r.bottom + 8) + 'px';
+}
+
+function toggleFlyout(kind, anchor) {
+  if (!flyout.hidden && flyoutKind === kind) { closeFlyout(); return; }
+  closeMenus();
+  flyoutKind = kind;
+  flyoutAnchor = anchor;
+  flyout.hidden = false;
+  flyoutPosition(anchor);
+  renderFlyout();
+}
+
+function closeFlyout() {
+  flyout.hidden = true;
+  flyoutKind = null;
+  flyoutAnchor = null;
+}
+
+function refreshFlyout() {
+  if (flyout.hidden || !flyoutKind) return;
+  renderFlyout();
+}
+
+function netRows() {
+  const s = state.system;
+  return NETWORKS.map((n) => `
+    <button class="net-row ${s.wifi && s.wifiNetwork === n.name ? 'on' : ''}" data-net="${escapeHtml(n.name)}">
+      <span class="net-ico">${icons(n.lock ? 'lock' : 'wifi')}</span>
+      <span class="nm">${escapeHtml(n.name)}${n.known ? '<small>Conocida</small>' : ''}</span>
+      ${s.wifi && s.wifiNetwork === n.name ? `<span class="check">${icons('check')}</span>` : `<span class="net-sig">${icons('wifi')}</span>`}
+    </button>`).join('');
+}
+
+function calendarHtml() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const first = new Date(year, month, 1);
+  const offset = (first.getDay() + 6) % 7;
+  const days = new Date(year, month + 1, 0).getDate();
+  const monthName = new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(now);
+  const labels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const todayLabel = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+
+  let cells = labels.map((l) => `<span class="cal-head">${l}</span>`).join('');
+  for (let i = 0; i < offset; i++) cells += '<span class="cal-empty"></span>';
+  for (let d = 1; d <= days; d++) {
+    const label = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(year, month, d));
+    cells += `<button class="cal-day ${d === today ? 'today' : ''}" data-cal-day="${escapeHtml(label)}">${d}</button>`;
+  }
+
+  return `
+    <div class="fly-head"><b>${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}</b><span>Hoy</span></div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-selected" data-cal-label>${todayLabel}</div>
+    <div class="fly-foot"><span>Sin eventos para hoy</span><button class="btn" data-open-settings="pantalla">Ajustes</button></div>`;
+}
+
+function flyoutContent(kind) {
+  const s = state.system;
+
+  if (kind === 'wifi') {
+    return `
+      <div class="fly-head">
+        <b>Wi-Fi</b>
+        <button class="switch ${s.wifi ? 'on' : ''}" data-fly-sys="wifi" aria-label="Wi-Fi"></button>
+      </div>
+      <div class="net-list ${s.wifi ? '' : 'off'}">${netRows()}</div>
+      <div class="fly-foot">
+        <span>${s.wifi ? `Conectado a ${escapeHtml(s.wifiNetwork)}` : 'Wi-Fi desactivado'}</span>
+        <button class="btn" data-open-settings="wifi">Ajustes</button>
+      </div>`;
+  }
+
+  if (kind === 'battery') {
+    return `
+      <div class="fly-head"><b>Batería</b><span>87 %</span></div>
+      <div class="battery-visual"><span style="width:87%"></span></div>
+      <p class="fly-note">Alimentación por batería · quedan 5 h 12 min</p>
+      <div class="row">
+        <div><b>Bajo consumo</b><small>Reduce el brillo y el rendimiento</small></div>
+        <button class="switch ${s.lowPower ? 'on' : ''}" data-fly-sys="lowPower" aria-label="Bajo consumo"></button>
+      </div>
+      <div class="fly-foot">
+        <span>Salud de la batería: 96 %</span>
+        <button class="btn" data-open-settings="pantalla">Ajustes</button>
+      </div>`;
+  }
+
+  return calendarHtml();
+}
+
+function renderFlyout() {
+  if (!flyoutKind) return;
+  flyout.dataset.kind = flyoutKind;
+  flyout.innerHTML = flyoutContent(flyoutKind);
+  wireFlyout();
+}
+
+function wireFlyout() {
+  $$('[data-fly-sys]', flyout).forEach((sw) => {
+    sw.addEventListener('click', () => toggleSystem(sw.dataset.flySys));
+  });
+
+  $$('[data-net]', flyout).forEach((btn) => {
+    btn.addEventListener('click', () => connectNetwork(btn.dataset.net));
+  });
+
+  $$('[data-open-settings]', flyout).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const section = btn.dataset.openSettings;
+      closeFlyout();
+      openApp('ajustes', { section });
+    });
+  });
+
+  $$('[data-cal-day]', flyout).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('[data-cal-day]', flyout).forEach((x) => x.classList.toggle('on', x === btn));
+      const label = $('[data-cal-label]', flyout);
+      if (label) label.textContent = btn.dataset.calDay;
+    });
+  });
 }
 
 /* ---------------------------- Reloj ---------------------------- */
 
 function setupClock() {
   const el = $('#clock');
+  if (!el) return;
   const tick = () => {
     const now = new Date();
     const date = new Intl.DateTimeFormat('es-ES', {
@@ -971,10 +2811,27 @@ function setupClock() {
       hour: '2-digit', minute: '2-digit', hour12: false
     }).format(now);
     el.textContent = `${date} ${time}`;
-    el.title = now.toLocaleString('es-ES');
+    el.title = `${now.toLocaleString('es-ES')} · pulsa para ver el calendario`;
   };
   tick();
   setInterval(tick, 15000);
+}
+
+/* ---------------------------- Barra de menús oculta ---------------------------- */
+
+function setupHotzone() {
+  const hot = $('#menuHotzone');
+  if (!hot) return;
+  hot.addEventListener('mouseenter', () => {
+    if (!state.menubarHidden) return;
+    document.body.classList.add('menubar-peek');
+  });
+  document.body.addEventListener('mousemove', (e) => {
+    if (!state.menubarHidden) { document.body.classList.remove('menubar-peek'); return; }
+    if (e.clientY > 40 && document.body.classList.contains('menubar-peek')) {
+      document.body.classList.remove('menubar-peek');
+    }
+  });
 }
 
 /* ---------------------------- Arranque ---------------------------- */
@@ -992,6 +2849,7 @@ function setupBoot() {
   const boot = $('#boot');
   const bar = $('#bootBar');
   const status = $('#bootStatus');
+  if (!boot || !bar) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const duration = reduce ? 900 : 2600;
   let started = null;
@@ -1007,24 +2865,22 @@ function setupBoot() {
   const finish = () => {
     if (finished) return;
     finished = true;
-    if (bar) bar.style.width = '100%';
+    bar.style.width = '100%';
     setTimeout(() => {
       boot.classList.add('gone');
       document.body.classList.add('ready');
       state.booted = true;
-      setTimeout(() => {
-        if (!state.open.size) openApp('archivos');
-      }, 420);
+      if (!state.open.size) {
+        setTimeout(() => { if (!state.open.size) openApp('archivos'); }, 420);
+      }
     }, reduce ? 60 : 320);
   };
 
   const step = (now) => {
     if (started === null) started = now;
     const t = Math.min(1, (now - started) / duration);
-
-    // Curva de progreso: rápida al inicio, se asienta al final.
     const eased = t < 0.85 ? 1 - Math.pow(1 - t / 0.85, 1.7) : 1;
-    if (bar) bar.style.width = (eased * 100).toFixed(1) + '%';
+    bar.style.width = (eased * 100).toFixed(1) + '%';
 
     for (let i = BOOT_STAGES.length - 1; i >= 0; i--) {
       if (t >= BOOT_STAGES[i][0]) {
@@ -1050,9 +2906,17 @@ function setupBoot() {
 /* ---------------------------- Init ---------------------------- */
 
 buildDock();
+buildDesktopIcons();
 setupMenus();
 setupControlCenter();
 setupClock();
+setupHotzone();
 setupBoot();
 setTheme('dark');
+applySystemClasses();
+syncControlCenter();
 renderSpotResults('');
+setInterval(musicTick, 1000);
+
+
+

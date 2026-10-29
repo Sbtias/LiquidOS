@@ -50,14 +50,16 @@ node scripts/preview.mjs
 # abre http://127.0.0.1:4173
 ```
 
-O simplemente abre `preview/index.html` en el navegador. Es una demo funcional:
+O simplemente abre `preview/index.html` en el navegador. Es una demo funcional y **todos los controles responden**:
 
-- **Dock** con magnificación, indicadores de app abierta y rebote al abrir.
-- **Ventanas** arrastrables, con efecto genio al minimizar y doble clic para maximizar.
-- **Spotlight** con `Ctrl + Espacio` (flechas + Enter) y resultados escalonados.
-- **Centro de control** con Wi-Fi, Bluetooth, No molestar, brillo, volumen y **modo claro/oscuro**.
+- **Dock** con magnificación, indicadores de app abierta y rebote al abrir; iconos de tamaño ajustable.
+- **Ventanas** arrastrables, con efecto genio al minimizar, doble clic para maximizar y menú contextual del escritorio.
+- **Barra de menús** operativa (menú de LiquidOS, Archivo, Editar, Ver, Ventana y Ayuda) con paneles de Wi-Fi, batería, calendario y bloqueo/apagado.
+- **Spotlight** con `Ctrl + Espacio` (flechas + Enter): busca apps, ajustes, documentos y acciones reales.
+- **Centro de control** con Wi-Fi, Bluetooth, No molestar, brillo, volumen, luz nocturna y **modo claro/oscuro**.
+- **Iconos del escritorio** que abren carpetas, notas, capturas y la ISO.
+- **Apps de muestra totalmente interactivas**: Archivos (navegación, búsqueda y vista previa), Navegador (pestañas, historial y descargas), Correo (leer, responder, archivar, enviar), Notas (crear, editar y borrar), Música (reproducción, lista y volumen), Terminal (comandos reales) y Ajustes (Wi-Fi, apariencia, Dock, sonido y pantalla).
 - **Arranque cinematográfico** de 2,6 s (se puede saltar con clic o tecla).
-- Apps de muestra: Archivos, Navegador, Correo, Notas (editable), Música, Terminal y Ajustes.
 
 > La demo es HTML/CSS/JS y no forma parte de la ISO: sirve para iterar el diseño rápido.
 
