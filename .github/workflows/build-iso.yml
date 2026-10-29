@@ -190,13 +190,23 @@ jobs:
             echo "- Registro: Supabase · \`public.liquidos_releases\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Apartar la ISO completa (solo si va por partes)
+        # GitHub rechaza archivos de más de 2 GiB. Las partes ya están en dist/;
+        # la ISO completa se queda fuera para no intentar subirla a la release.
+        if: steps.assets.outputs.split == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/liquidos-iso"
+          mv dist/*.iso "$RUNNER_TEMP/liquidos-iso/"
+
       - name: Publicar la ISO como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: liquidos-${{ env.LIQUIDOS_VERSION }}-${{ env.LIQUIDOS_ARCH }}
           path: |
             dist/*.iso
+            dist/*.part*
             dist/*.sha256
+            dist/LEEME-descarga.txt
           if-no-files-found: error
           retention-days: 30
 
