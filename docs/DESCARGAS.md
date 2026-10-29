@@ -27,7 +27,7 @@ La vista previa (`node scripts/preview.mjs`) consulta el registro real en
 ## 2. Por qué la ISO no se sube a Supabase
 
 El plan actual del proyecto tiene un límite de **50 MB por objeto**
-(`file_size_limit = 52428800`) y una ISO Debian con GNOME ronda los 2–3 GB.
+(`file_size_limit = 52428800`) y una ISO Debian con GNOME ronda los 3,3 GB.
 Subirla requeriría subir de plan o configurar almacenamiento externo (S3), y
 además gastaría la cuota de transferencia del proyecto.
 
@@ -203,10 +203,10 @@ Comportamiento:
 
 - **Push a `main` o ejecución manual** → `source = artifact` y el enlace apunta
   al run de Actions (el artefacto se descarga desde allí).
-- **Etiqueta `v*` o release publicada** → `source = release` y el enlace apunta
-  al asset de GitHub Releases (o a la página de la release si hay partes). Las
-  partes se suben y se registran en `parts`.
-- Si `SUPABASE_URL` no está definido, el paso se omite.
+- **Push de una etiqueta `v*`** → el flujo compila, crea o actualiza la release
+  y adjunta la ISO (o sus partes). El registro usa `source = release` y las
+  URLs de los assets reales; si hay partes, también se guardan en `parts`.
+- Si `SUPABASE_URL` no está definido, el paso de Supabase se omite.
 - El paso tiene `continue-on-error: true`: un fallo de Supabase **no invalida**
   la ISO ya construida.
 - El resumen del run incluye la versión, si se dividió y el enlace publicado.
@@ -218,7 +218,9 @@ git tag -a v1.0 -m "LiquidOS 1.0"
 git push origin v1.0
 ```
 
-El flujo construye la ISO, la adjunta a la release y la registra en Supabase.
+El flujo detecta la etiqueta, compila con la versión `1.0` (tomada del nombre
+de la etiqueta), crea la release, sube la ISO o sus partes y la registra en
+Supabase.
 
 ---
 

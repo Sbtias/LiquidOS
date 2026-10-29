@@ -34,8 +34,9 @@ ocupar 15 GB de disco. GitHub compila por ti y te da la ISO como artefacto.
 3. Al terminar (~40 min), abre la ejecución y descarga el artefacto
    **`liquidos-1.0-amd64`**: contiene la ISO y su SHA-256.
 
-4. Opcional: al publicar una *release* o un tag `v1.0`, la ISO se adjunta
-   automáticamente a la release.
+4. Opcional: sube una etiqueta `v1.0` (`git tag -a v1.0 -m "LiquidOS 1.0" &&
+   git push origin v1.0`). El flujo compila y crea la release con la ISO (o
+   sus partes) y la registra en Supabase.
 
 5. Opcional: para que la versión aparezca en **Firefox → Descargas** de la
    vista previa, añade los secretos `SUPABASE_URL` y

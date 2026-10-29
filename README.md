@@ -161,9 +161,9 @@ Si estás en Windows y no tienes Docker ni WSL, deja que compile GitHub:
    Contiene `LiquidOS-1.0-amd64.iso` y su `.sha256`.
 5. Monta la ISO en VirtualBox/VMware/QEMU y arranca.
 
-El flujo también se dispara al publicar una *release* (`v1.0`) y adjunta la ISO
-automáticamente; en ese caso el registro apunta directamente al asset de la release.
-Archivo: `.github/workflows/build-iso.yml`.
+El flujo también se dispara al subir una etiqueta `v1.0`: compila y crea la
+release con la ISO (o sus partes) automáticamente. Archivo:
+`.github/workflows/build-iso.yml`.
 
 ### En tu equipo
 

@@ -20,6 +20,7 @@ on:
           - amd64
   push:
     branches: [main]
+    tags: ["v*"]
     paths:
       - "build/**"
       - "branding/**"
@@ -27,8 +28,6 @@ on:
       - "desktop/**"
       - "scripts/**"
       - ".github/workflows/build-iso.yml"
-  release:
-    types: [published]
 
 concurrency:
   group: iso-${{ github.ref }}
@@ -54,6 +53,17 @@ jobs:
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
+
+      - name: Determinar la versión
+        # En una etiqueta v1.2 la versión sale del nombre; en el resto,
+        # del formulario o del valor por defecto.
+        run: |
+          version="${{ inputs.version || '1.0' }}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          echo "LIQUIDOS_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Versión de LiquidOS: $version"
 
       - name: Verificar la configuración
         run: |
@@ -211,7 +221,7 @@ jobs:
           retention-days: 30
 
       - name: Adjuntar a la release (solo etiquetas v*)
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
