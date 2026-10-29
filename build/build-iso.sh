@@ -70,6 +70,14 @@ stage() {
 
     chmod +x "$WORK"/config/hooks/normal/*.hook.chroot
 
+    # El script de verificación se puede ejecutar dentro de la ISO.
+    install -Dm755 "$ROOT/scripts/verificar-uso-diario.sh" \
+        "$INC/usr/local/bin/liquidos-verificar"
+
+    # Windows no conserva el bit de ejecución: lo restauramos para los
+    # scripts que systemd y el usuario ejecutan dentro de la ISO.
+    chmod +x "$INC/usr/local/sbin/liquidos-firstboot" 2>/dev/null || true
+
     # Versión real en los ficheros de identidad
     sed -i "s/^VERSION=\"1.0\"/VERSION=\"${VERSION}\"/" \
         "$WORK/config/hooks/normal/0100-liquidos-identity.hook.chroot"

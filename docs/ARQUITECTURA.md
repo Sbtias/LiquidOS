@@ -103,12 +103,32 @@ Este hook prepara la distro para no tener que configurar nada al arrancar:
   `mailto:`.
 - `flatpak remote-add --system flathub` para que **GNOME Software** tenga catálogo amplio.
   Si la compilación no tiene red, el hook avisa y continúa: la ISO sigue siendo válida.
-- `/usr/local/bin/liquidos` (más `liquidos-report`) con `info`, `apps`, `search`, `install`,
-  `remove`, `update`, `store`, `flatpak`, `theme`, `wallpaper`, `doctor` y `report`.
+- `liquidos-firstboot.service` + `/usr/local/sbin/liquidos-firstboot`: en el primer arranque
+  con red añade Flathub, refresca appstream y el catálogo de PackageKit, y deja la marca
+  `/var/lib/liquidos/firstboot.done`. Si no hay red, se reintenta en el siguiente arranque.
+- `/etc/polkit-1/rules.d/49-liquidos-live.rules`: permite instalar con PackageKit y Flatpak
+  sin contraseña **solo al usuario `user` de la sesión live**. La cuenta creada por Calamares
+  no se llama así, de modo que en el sistema instalado se sigue pidiendo autenticación.
+- Paquetes `packagekit`, `packagekit-tools`, `packagekit-backend-aptcc`,
+  `xdg-desktop-portal` y `xdg-desktop-portal-gtk` para que GNOME Software pueda instalar
+  paquetes Debian y los portales funcionen en Wayland.
+- `/usr/local/bin/liquidos` (más `liquidos-report` y `liquidos-verificar`) con `info`, `apps`,
+  `search`, `install`, `remove`, `update`, `store`, `flatpak`, `theme`, `wallpaper`, `doctor`,
+  `verificar` y `report`.
 - Alias de zsh en `/etc/skel/.zshrc` (`actualizar`, `tienda`, `estado`, `navegador`, `correo`…).
 
 La vista previa web reproduce estas mismas funciones en `preview/app.js` (Centro de software,
-shell virtual y panel de personalización) para poder probarlas sin compilar la ISO.
+shell virtual y panel de personalización) para poder probarlas sin compilar la ISO. Además,
+`scripts/preview.mjs` expone dos APIs locales:
+
+- `/api/web`: descarga páginas reales, elimina scripts, iframes y manejadores inline, añade
+  una base y un puente de navegación, y bloquea destinos privados (SSRF). El iframe se
+  ejecuta en un origen opaco (`sandbox`), separado del escritorio.
+- `/api/store/*`: consulta la API real de Flathub (catálogo e iconos) y, si el equipo tiene
+  Flatpak, lanza `flatpak install/update/uninstall` como trabajos en segundo plano con su
+  salida. Sin Flatpak responde con el comando exacto en lugar de fingir una instalación.
+
+La demo no forma parte de la ISO; es una herramienta de diseño y prueba.
 
 ## 4. Decisiones y alternativas descartadas
 

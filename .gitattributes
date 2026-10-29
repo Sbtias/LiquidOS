@@ -6,6 +6,12 @@
 Dockerfile      text eol=lf
 Makefile        text eol=lf
 
+# Todo el árbol de live-build y los scripts se ejecutan dentro de Linux:
+# sin CRLF, aunque el repositorio se clone en Windows.
+build/live-build/config/**      text eol=lf
+scripts/**                      text eol=lf
+.gitattributes                  text eol=lf
+
 # Textos y código de la vista previa
 *.md            text eol=lf
 *.js            text eol=lf

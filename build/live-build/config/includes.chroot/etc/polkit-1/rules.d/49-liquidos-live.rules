@@ -1,0 +1,23 @@
+/* LiquidOS — instalación sin contraseña en la sesión live.
+ *
+ * En la ISO el usuario de la sesión live es «user» y no tiene
+ * contraseña útil, así que PackageKit y Flatpak pedirían una
+ * autenticación imposible. Esta regla afecta SOLO a ese usuario:
+ * una vez instalado el sistema, la cuenta real del usuario no se
+ * llama «user» y sigue pidiendo contraseña con normalidad.
+ *
+ * Los identificadores de acción no distinguen mayúsculas de forma
+ * uniforme entre versiones (org.freedesktop.Flatpak.install frente a
+ * minúsculas), así que se comparan en minúsculas.
+ */
+polkit.addRule(function (action, subject) {
+    if (subject.user !== "user") {
+        return polkit.Result.NOT_HANDLED;
+    }
+    var id = String(action.id || "").toLowerCase();
+    if (id.indexOf("org.freedesktop.packagekit.") === 0 ||
+        id.indexOf("org.freedesktop.flatpak.") === 0) {
+        return polkit.Result.YES;
+    }
+    return polkit.Result.NOT_HANDLED;
+});

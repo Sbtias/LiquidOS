@@ -69,6 +69,11 @@ gnome-keyring
 gnome-software
 gnome-software-plugin-flatpak
 flatpak
+packagekit
+packagekit-tools
+packagekit-backend-aptcc
+xdg-desktop-portal
+xdg-desktop-portal-gtk
 gdm3
 network-manager
 network-manager-gnome

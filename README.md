@@ -33,7 +33,9 @@ de **personalización** con acentos, fondos, posición del Dock y estilo de vent
 
 | Pieza | Estado |
 |---|---|
-| Vista previa interactiva del escritorio (web) | ✅ lista, sin dependencias |
+| Vista previa interactiva del escritorio (web) | ✅ con `node scripts/preview.mjs` |
+| Navegador real en la vista previa (proxy + iframe aislado) | ✅ |
+| Tienda real en la vista previa (Flathub y Flatpak) | ✅ catálogo real; instala si hay Flatpak |
 | Árbol de compilación con `live-build` (Debian 12) | ✅ listo |
 | Identidad del sistema (`/etc/os-release`, hostname, shell zsh) | ✅ |
 | Tema macOS: WhiteSur GTK, iconos y cursores | ✅ con respaldo a Adwaita si no hay red |
@@ -59,7 +61,9 @@ Nada más arrancar, LiquidOS ya sirve para trabajar y navegar:
   escribir `firefox-esr`; los enlaces `http`, `https` y los PDF abren donde deben.
 - **Thunderbird** como cliente de correo y gestor de `mailto:`.
 - **Centro de software**: instala, actualiza y quita aplicaciones desde una ventana, con
-  Flathub para las apps que no están en Debian. `sudo flatpak install flathub …` también vale.
+  Flathub para las apps que no están en Debian. La primera vez, el servicio
+  `liquidos-firstboot` añade Flathub y refresca el catálogo; en la sesión live se puede
+  instalar sin contraseña. `sudo flatpak install flathub …` también vale.
 - **Terminal con zsh** y herramientas de verdad: `tmux`, `ripgrep`, `fd`, `bat`, `fzf`, `jq`,
   `ncdu`, `ffmpeg`, `nmap`, `ssh`, `p7zip`… además de `apt`.
 - **Comando `liquidos`** para las tareas típicas, sin memorizar rutas:
@@ -100,19 +104,34 @@ node scripts/preview.mjs
 # abre http://127.0.0.1:4173
 ```
 
-O simplemente abre `preview/index.html` en el navegador. Es una demo funcional y **todos los controles responden**:
+Hace falta el servidor (no vale abrir `preview/index.html` directamente) porque el navegador
+y la tienda usan la API local. Necesitas **Node 18 o superior**. **Firefox carga páginas
+reales** y el **Centro de software consulta el catálogo real de Flathub**:
 
-- **Dock** con magnificación, indicadores de app abierta y rebote al abrir; iconos de tamaño ajustable.
-- **Ventanas** arrastrables, con efecto genio al minimizar, doble clic para maximizar y menú contextual del escritorio.
-- **Barra de menús** operativa (menú de LiquidOS, Archivo, Editar, Ver, Ventana y Ayuda) con paneles de Wi-Fi, batería, calendario y bloqueo/apagado.
-- **Spotlight** con `Ctrl + Espacio` (flechas + Enter): busca apps, ajustes, documentos y acciones reales.
-- **Centro de control** con Wi-Fi, Bluetooth, No molestar, brillo, volumen, luz nocturna y **modo claro/oscuro**.
-- **Iconos del escritorio** que abren carpetas, notas, capturas y la ISO.
-- **Apps de muestra totalmente interactivas**: Archivos (navegación, búsqueda y vista previa), Firefox (pestañas, favoritos, historial y descargas), Thunderbird (leer, buscar, responder, archivar, enviar), Centro de software (instalar, quitar y actualizar con progreso real), Notas (crear, editar y borrar), Música (reproducción, lista y volumen), Terminal (shell virtual con tuberías, redirecciones, `apt`, `flatpak` y `liquidos`) y Ajustes (Wi-Fi, apariencia, personalización, Dock, sonido y pantalla).
-- **Personalización persistente**: acento, fondos, posición y tamaño del Dock, lado de los botones, esquinas y transparencia; se guarda entre visitas.
-- **Arranque cinematográfico** de 2,6 s (se puede saltar con clic o tecla).
+- **Firefox real**: escribe `example.com`, `es.wikipedia.org` o una búsqueda; las páginas se
+  descargan en el servidor, se sanean (sin scripts del sitio) y se muestran en un iframe
+  aislado. Funcionan las pestañas, atrás/adelante, recargar, favoritos e historial con URLs
+  reales.
+- **Tienda real**: busca en Flathub y muestra iconos y datos auténticos. Si el equipo donde
+  ejecutas la demo tiene **Flatpak**, instalar, quitar y actualizar se ejecuta de verdad con
+  `flatpak` y verás la salida del comando. En ese caso la demo añade el remoto oficial
+  `flathub` al usuario si aún no existe (`flatpak remote-add --user`). Si no hay Flatpak
+  (por ejemplo, en Windows), la demo lo dice claramente y ofrece el comando exacto y el
+  enlace a Flathub; la ISO sí lo trae.
+- El resto de la demo sigue siendo local y **todos los controles responden**:
 
-> La demo es HTML/CSS/JS y no forma parte de la ISO: sirve para iterar el diseño rápido.
+  - **Dock** con magnificación, indicadores de app abierta y rebote al abrir; iconos de tamaño ajustable.
+  - **Ventanas** arrastrables, con efecto genio al minimizar, doble clic para maximizar y menú contextual del escritorio.
+  - **Barra de menús** operativa (menú de LiquidOS, Archivo, Editar, Ver, Ventana y Ayuda) con paneles de Wi-Fi, batería, calendario y bloqueo/apagado.
+  - **Spotlight** con `Ctrl + Espacio` (flechas + Enter): busca apps, ajustes, documentos y acciones reales.
+  - **Centro de control** con Wi-Fi, Bluetooth, No molestar, brillo, volumen, luz nocturna y **modo claro/oscuro**.
+  - **Iconos del escritorio** que abren carpetas, notas, capturas y la ISO.
+  - **Apps de muestra interactivas**: Archivos, Thunderbird, Notas, Música, Terminal (shell virtual con tuberías, redirecciones, `apt`, `flatpak` y `liquidos`) y Ajustes.
+  - **Personalización persistente**: acento, fondos, posición y tamaño del Dock, lado de los botones, esquinas y transparencia; se guarda entre visitas.
+  - **Arranque cinematográfico** de 2,6 s (se puede saltar con clic o tecla).
+
+> La demo es HTML/CSS/JS y no forma parte de la ISO: sirve para iterar el diseño rápido. El
+> navegador real necesita conexión a internet; el proxy bloquea direcciones privadas.
 
 ---
 
@@ -167,6 +186,23 @@ En Windows puedes usar [Rufus](https://rufus.ie) en modo *DD* o [balenaEtcher](h
 
 Detalles, solución de problemas y pruebas en VM: [`docs/COMPILAR.md`](docs/COMPILAR.md).
 
+### Comprobar que Firefox y la tienda funcionan en la VM
+
+Dentro de la ISO arrancada, abre una terminal y ejecuta:
+
+```bash
+liquidos verificar
+```
+
+Comprueba Firefox y su wrapper, Thunderbird y `mailto:`, GNOME Software, Flatpak, el remoto
+Flathub, PackageKit, el resultado del primer arranque, los portales y la red. También puedes
+usar `liquidos doctor` para un resumen rápido. Si algo falla, `liquidos report` genera un
+informe con todo lo necesario.
+
+Para probar la tienda de verdad: abre **Centro de software**, busca una app de Flathub,
+instálala y ejecútala desde el menú. La primera vez puede tardar en descargar el catálogo;
+el servicio `liquidos-firstboot` lo prepara en segundo plano.
+
 ---
 
 ## Probar el aspecto sin compilar la ISO
@@ -203,7 +239,7 @@ LiquidOS/
 ├── desktop/apps/             Aplicaciones propias (bienvenida)
 ├── docs/                     Arquitectura, compilación, capturas y hoja de ruta
 ├── preview/                  Escritorio de demostración (web)
-├── scripts/                  Utilidades (servidor de preview, aplicar tema)
+├── scripts/                  Servidor de la vista previa, tema y verificación en la VM
 └── Makefile                  Atajos: preview, iso, native, look, clean
 ```
 

@@ -273,7 +273,27 @@ const state = {
     cat: 'todas',
     progress: {},
     installed: ['firefox', 'thunderbird', 'terminal'],
-    updates: ['vlc', 'gimp']
+    updates: ['vlc', 'gimp'],
+    status: null,
+    statusLoading: false,
+    real: [],
+    realQuery: '',
+    realLoading: false,
+    realError: '',
+    installedReal: null,
+    installedLoading: false,
+    installedError: '',
+    updatesReal: null,
+    updatesLoading: false,
+    updatesError: '',
+    jobs: {},
+    notice: null,
+    searchTimer: null
+  },
+  web: {
+    pages: {},
+    loading: {},
+    errors: {}
   },
   system: {
     wifi: true,
@@ -358,6 +378,26 @@ function toast(msg, ms = 2200) {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* Llamadas a la API local de la vista previa (navegador y tienda). */
+async function api(path, opts = {}) {
+  const init = { method: opts.method || 'GET', headers: {} };
+  if (opts.body !== undefined) {
+    init.headers['content-type'] = 'application/json';
+    init.body = JSON.stringify(opts.body);
+  }
+  const res = await fetch(path, init);
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Respuesta no válida del servidor (HTTP ${res.status})`);
+  }
+  if (!res.ok && data.ok !== false) {
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  return data;
 }
 
 function paintRange(input) {
@@ -539,12 +579,51 @@ function openApp(id, opts = {}) {
   if (dockItem) dockItem.classList.add('running');
 }
 
+function cssEscape(value) {
+  if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(value);
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, (c) => '\\' + c);
+}
+
+/* Selector estable para devolver el foco a un campo tras repintar la ventana.
+ * Sin esto, escribir en un buscador mientras llegan resultados hace que el
+ * foco se pierda y solo se pueda teclear una letra cada vez. */
+function focusSelector(el) {
+  for (const attr of el.attributes) {
+    if (!attr.name.startsWith('data-') || attr.name === 'data-web-frame') continue;
+    return attr.value
+      ? `[${attr.name}="${cssEscape(attr.value)}"]`
+      : `[${attr.name}]`;
+  }
+  if (el.id) return '#' + cssEscape(el.id);
+  return null;
+}
+
 function rerenderWindow(id) {
   const entry = state.open.get(id);
   if (!entry) return;
   const body = entry.el.querySelector('.win-body');
+  const active = document.activeElement;
+  const inside = active && active !== document.body && body.contains(active);
+  const editable = inside && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+  const selector = editable ? focusSelector(active) : null;
+  const caret = editable && typeof active.selectionStart === 'number'
+    ? [active.selectionStart, active.selectionEnd]
+    : null;
+  const scroll = body.scrollTop;
+
   body.innerHTML = render(id);
   wireWindow(id, entry.el);
+
+  if (selector) {
+    const next = body.querySelector(selector);
+    if (next) {
+      next.focus({ preventScroll: true });
+      if (caret) {
+        try { next.setSelectionRange(caret[0], caret[1]); } catch { /* sin selección */ }
+      }
+    }
+  }
+  body.scrollTop = scroll;
 }
 
 function closeWin(id) {
@@ -976,18 +1055,91 @@ const SITE_URL = {
   descargas: 'liquidos.local/descargas'
 };
 
+/* Una entrada del navegador es una página interna («inicio») o una
+ * dirección real guardada como «u:https://…». */
+function isWebEntry(entry) {
+  return typeof entry === 'string' && entry.startsWith('u:');
+}
+
+function webUrl(entry) {
+  return isWebEntry(entry) ? entry.slice(2) : '';
+}
+
+function webHost(entry) {
+  try {
+    return new URL(webUrl(entry)).hostname.replace(/^www\./, '');
+  } catch {
+    return 'la web';
+  }
+}
+
+function webPage(entry) {
+  return state.web.pages[entry] || null;
+}
+
+function entryUrl(entry) {
+  if (isWebEntry(entry)) return webUrl(entry);
+  if (entry === 'buscar') {
+    return `liquidos.local/buscar?q=${encodeURIComponent(state.views.navegador.query || '')}`;
+  }
+  return SITE_URL[entry] || SITE_URL.inicio;
+}
+
 function sitePageTitle(id) {
-  return { nueva: 'Nueva pestaña', inicio: 'Inicio', favoritos: 'Favoritos', historial: 'Historial', descargas: 'Descargas' }[id] || 'Inicio';
+  if (isWebEntry(id)) {
+    const page = webPage(id);
+    return (page && page.title) || webHost(id);
+  }
+  return {
+    nueva: 'Nueva pestaña',
+    inicio: 'Inicio',
+    favoritos: 'Favoritos',
+    historial: 'Historial',
+    descargas: 'Descargas',
+    buscar: 'Buscar en la web'
+  }[id] || 'Inicio';
+}
+
+function webStateHtml(entry) {
+  const error = state.web.errors[entry];
+  const page = webPage(entry);
+  if (page) return '';
+  if (error) {
+    return `
+      <div class="web-error">
+        <b>No se pudo abrir esta página</b>
+        <p>${escapeHtml(error)}</p>
+        <div class="web-error-actions">
+          <button class="btn primary" data-nav="reload">Reintentar</button>
+          <button class="btn" data-quick="https://html.duckduckgo.com/html/?q=${encodeURIComponent(webUrl(entry))}">Buscar en DuckDuckGo</button>
+        </div>
+      </div>`;
+  }
+  return `<div class="web-spinner"></div><p>Conectando con <b>${escapeHtml(webHost(entry))}</b>…</p>`;
 }
 
 function browserPageHtml(id, b) {
-  if (id === 'buscar') {
-    const q = state.views.navegador.query || '';
+  if (isWebEntry(id)) {
     return `
-    <div class="page">
-      <h2>No se pudo abrir esa dirección</h2>
-      <p class="lead">«${escapeHtml(q)}» no existe en la demo. Prueba con <b>liquidos.local/inicio</b>.</p>
-      <button class="btn primary" data-page="inicio">Volver al inicio</button>
+    <div class="web-wrap">
+      <iframe class="web-frame" data-web-frame data-web-entry="${escapeHtml(id)}"
+        title="${escapeHtml(sitePageTitle(id))}" sandbox="allow-scripts allow-forms allow-popups"
+        referrerpolicy="no-referrer"></iframe>
+      <div class="web-state" data-web-state ${webPage(id) ? 'hidden' : ''}>${webStateHtml(id)}</div>
+    </div>`;
+  }
+
+  if (id === 'buscar') {
+    const q = b.query || '';
+    return `
+    <div class="page start-page">
+      <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
+      <h2>Buscar en la web</h2>
+      <p>«${escapeHtml(q)}» se enviará a DuckDuckGo, que devolverá resultados reales.</p>
+      <form class="web-search" data-web-form>
+        <input data-web-q value="${escapeHtml(q)}" placeholder="Busca en la web" aria-label="Buscar en la web">
+        <button class="btn primary" type="submit">Buscar</button>
+      </form>
     </div>`;
   }
 
@@ -996,42 +1148,46 @@ function browserPageHtml(id, b) {
     <div class="page start-page">
       <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
       <h2>Nueva pestaña</h2>
-      <p>Escribe una dirección o elige un acceso rápido.</p>
+      <p>Escribe una dirección o busca en Internet de verdad.</p>
+      <form class="web-search" data-web-form>
+        <input data-web-q placeholder="Busca en la web o escribe una dirección" aria-label="Buscar en la web">
+        <button class="btn primary" type="submit">Buscar</button>
+      </form>
       <div class="tiles">
-        <button class="tile" data-page="inicio"><b>⌂</b>Inicio</button>
+        <button class="tile" data-quick="https://es.wikipedia.org/"><b>W</b>Wikipedia</button>
+        <button class="tile" data-quick="https://html.duckduckgo.com/html/?q=noticias"><b>⌕</b>Noticias</button>
+        <button class="tile" data-quick="https://flathub.org/"><b>⌂</b>Flathub</button>
         <button class="tile" data-page="favoritos"><b>★</b>Favoritos</button>
-        <button class="tile" data-page="historial"><b>↺</b>Historial</button>
-        <button class="tile" data-page="descargas"><b>⤓</b>Descargas</button>
       </div>
     </div>`;
   }
 
   if (id === 'favoritos') {
-    const favs = b.favs.filter((f) => SITE_URL[f] && f !== 'nueva');
+    const favs = b.favs.filter((f) => f !== 'nueva');
     return `
     <div class="page">
       <h2>Favoritos</h2>
       <p class="lead">Los sitios que guardaste en este equipo.</p>
       ${favs.length ? favs.map((f) => `
-        <button class="list-row" data-page="${f}">
+        <button class="list-row" ${isWebEntry(f) ? `data-quick="${escapeHtml(webUrl(f))}"` : `data-page="${f}"`}>
           <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons(f === 'descargas' ? 'download' : f === 'historial' ? 'clock' : 'globe')}</span>
-          <span><b>${sitePageTitle(f)}</b><small>${SITE_URL[f]}</small></span>
-          <span class="meta">${b.favs.includes(f) ? 'Guardado' : ''}</span>
-        </button>`).join('') : '<div class="finder-empty">Aún no has guardado ningún favorito. Usa la estrella de la barra.</div>'}
+          <span><b>${escapeHtml(sitePageTitle(f))}</b><small>${escapeHtml(entryUrl(f))}</small></span>
+          <span class="meta">Guardado</span>
+        </button>`).join('') : '<div class="finder-empty">Aún no has guardado ningún favorito. Abre una web y usa la estrella de la barra.</div>'}
     </div>`;
   }
 
   if (id === 'historial') {
-    const seen = [...new Set(b.history)].filter((h) => SITE_URL[h] && h !== 'nueva');
+    const seen = [...new Set(b.history)].filter((h) => h !== 'nueva');
     return `
     <div class="page">
       <h2>Historial</h2>
-      <p class="lead">Páginas visitadas en esta sesión.</p>
+      <p class="lead">Páginas visitadas en esta sesión, incluidas las webs reales.</p>
       ${seen.length ? seen.map((h, i) => `
-        <button class="list-row" data-page="${h}">
+        <button class="list-row" ${isWebEntry(h) ? `data-quick="${escapeHtml(webUrl(h))}"` : `data-page="${h}"`}>
           <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons(h === 'descargas' ? 'download' : h === 'favoritos' ? 'tag' : 'globe')}</span>
-          <span><b>${sitePageTitle(h)}</b><small>${SITE_URL[h]}</small></span>
-          <span class="meta">${i === 0 ? 'Ahora' : i < 3 ? 'Hoy' : 'Esta sesión'}</span>
+          <span><b>${escapeHtml(sitePageTitle(h))}</b><small>${escapeHtml(entryUrl(h))}</small></span>
+          <span class="meta">${i === 0 ? 'Ahora' : i < 4 ? 'Hoy' : 'Esta sesión'}</span>
         </button>`).join('') : '<div class="finder-empty">Todavía no hay historial.</div>'}
     </div>`;
   }
@@ -1051,12 +1207,12 @@ function browserPageHtml(id, b) {
   <div class="page start-page">
     <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
     <h2>Bienvenido a LiquidOS</h2>
-    <p>Tu escritorio, fluido y silencioso. Todo lo que necesitas, a un gesto de distancia.</p>
+    <p>Tu escritorio, fluido y silencioso. El navegador carga páginas reales: escribe una dirección arriba.</p>
     <div class="tiles">
-      <button class="tile" data-page="inicio"><b>⌘</b>LiquidOS</button>
+      <button class="tile" data-quick="https://es.wikipedia.org/"><b>W</b>Wikipedia</button>
+      <button class="tile" data-quick="https://html.duckduckgo.com/html/?q=debian"><b>⌕</b>Buscar</button>
       <button class="tile" data-page="favoritos"><b>★</b>Favoritos</button>
       <button class="tile" data-page="historial"><b>↺</b>Historial</button>
-      <button class="tile" data-page="descargas"><b>⤓</b>Descargas</button>
     </div>
   </div>`;
 }
@@ -1070,9 +1226,7 @@ function viewBrowser() {
   const b = state.views.navegador;
   const tab = curTab();
   const id = tab.stack[tab.index] || 'inicio';
-  const url = id === 'buscar'
-    ? `liquidos.local/buscar?q=${encodeURIComponent(b.query)}`
-    : SITE_URL[id];
+  const url = entryUrl(id);
   const fav = b.favs.includes(id);
 
   return `
@@ -1082,7 +1236,7 @@ function viewBrowser() {
         const tid = t.stack[t.index] || 'inicio';
         return `
         <button class="ff-tab ${i === b.active ? 'on' : ''}" data-tab="${i}" title="${escapeHtml(sitePageTitle(tid))}">
-          <span class="ff-tab-ico">${icons('globe')}</span>
+          <span class="ff-tab-ico">${icons(isWebEntry(tid) ? 'globe' : 'globe')}</span>
           <span class="ff-tab-title">${escapeHtml(sitePageTitle(tid))}</span>
           <span class="ff-tab-x" data-tab-close="${i}" role="button" title="Cerrar pestaña">×</span>
         </button>`;
@@ -1096,7 +1250,7 @@ function viewBrowser() {
       <button class="nav" data-nav="home" title="Inicio">${icons('home')}</button>
       <div class="url">${icons('globe')}<input data-url value="${escapeHtml(url)}" spellcheck="false" aria-label="Dirección"></div>
       <button class="nav fav ${fav ? 'on' : ''}" data-fav="1" title="${fav ? 'Quitar de favoritos' : 'Guardar en favoritos'}">${icons('tag')}</button>
-      <button class="nav" data-nav="search" title="Buscar en la página">${icons('search')}</button>
+      <button class="nav" data-nav="search" title="Editar la dirección">${icons('search')}</button>
     </div>
     ${browserPageHtml(id, b)}
   </div>`;
@@ -1107,12 +1261,18 @@ function browserGo(id) {
   const tab = curTab();
   if (!tab) return;
   if (id === 'buscar' && !b.query) id = 'inicio';
+  if (tab.stack[tab.index] === id) {
+    rerenderWindow('navegador');
+    if (isWebEntry(id)) ensureWebPage(id);
+    return;
+  }
   tab.stack = tab.stack.slice(0, tab.index + 1);
   tab.stack.push(id);
   if (tab.stack.length > 30) tab.stack.shift();
   tab.index = tab.stack.length - 1;
-  b.history = [id, ...b.history.filter((h) => h !== id)].slice(0, 24);
+  b.history = [id, ...b.history.filter((h) => h !== id)].slice(0, 30);
   rerenderWindow('navegador');
+  if (isWebEntry(id)) ensureWebPage(id);
 }
 
 function browserNewTab() {
@@ -1134,6 +1294,7 @@ function browserCloseTab(index) {
   b.tabs.splice(index, 1);
   b.active = Math.max(0, Math.min(b.active, b.tabs.length - 1));
   rerenderWindow('navegador');
+  ensureCurrentWeb();
 }
 
 function browserSelectTab(index) {
@@ -1141,13 +1302,14 @@ function browserSelectTab(index) {
   if (!b.tabs[index]) return;
   b.active = index;
   rerenderWindow('navegador');
+  ensureCurrentWeb();
 }
 
 function browserToggleFav() {
   const b = state.views.navegador;
   const tab = curTab();
   const id = tab.stack[tab.index];
-  if (!id || id === 'buscar' || id === 'nueva') { toast('Esta página no se puede guardar'); return; }
+  if (!id || id === 'nueva' || id === 'buscar') { toast('Esta página no se puede guardar'); return; }
   if (b.favs.includes(id)) {
     b.favs = b.favs.filter((f) => f !== id);
     toast('Página quitada de favoritos');
@@ -1158,14 +1320,88 @@ function browserToggleFav() {
   rerenderWindow('navegador');
 }
 
+function browserReload() {
+  const tab = curTab();
+  const id = tab && tab.stack[tab.index];
+  if (isWebEntry(id)) {
+    delete state.web.pages[id];
+    delete state.web.errors[id];
+    delete state.web.loading[id];
+    rerenderWindow('navegador');
+    ensureWebPage(id);
+  } else {
+    rerenderWindow('navegador');
+  }
+  toast('Recargando…', 900);
+}
+
+function normalizeAddress(value) {
+  const raw = value.trim();
+  if (!raw) return '';
+
+  // Direcciones internas de la demo (con o sin esquema).
+  const internal = /^(?:https?:\/\/)?liquidos\.local\/?([^?#]*)/i.exec(raw);
+  if (internal) {
+    const path = (internal[1] || '').replace(/\/+$/, '').toLowerCase();
+    return { internal: SITE_URL[path] ? path : 'inicio' };
+  }
+
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith('//')) return 'https:' + raw;
+
+  if (/\s/.test(raw)) {
+    return 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(raw);
+  }
+  // Un dominio con punto (o con puerto) se abre tal cual.
+  if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/|$|\?|#)/i.test(raw)) {
+    return 'https://' + raw;
+  }
+  return 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(raw);
+}
+
 function browserNavigate(raw) {
-  const b = state.views.navegador;
-  const clean = raw.trim().replace(/^https?:\/\//i, '');
-  const path = clean.replace(/^liquidos\.local\/?/i, '').split(/[?#/]/)[0].toLowerCase();
-  if (!path || path === 'inicio') return browserGo('inicio');
-  if (SITE_URL[path]) return browserGo(path);
-  b.query = raw.trim();
-  browserGo('buscar');
+  const value = raw.trim();
+  if (!value) return;
+  const target = normalizeAddress(value);
+  if (!target) return;
+  if (typeof target === 'object' && target.internal) return browserGo(target.internal);
+  browserGo('u:' + target);
+}
+
+async function ensureWebPage(entry) {
+  if (!isWebEntry(entry)) return;
+  if (state.web.pages[entry] || state.web.loading[entry]) return;
+  state.web.loading[entry] = true;
+  try {
+    const data = await api('/api/web?url=' + encodeURIComponent(webUrl(entry)));
+    if (data.ok && data.html) {
+      state.web.pages[entry] = {
+        html: data.html,
+        title: data.title || webHost(entry),
+        url: data.url || webUrl(entry),
+        at: Date.now()
+      };
+      const keys = Object.keys(state.web.pages);
+      if (keys.length > 16) delete state.web.pages[keys[0]];
+      delete state.web.errors[entry];
+    } else {
+      state.web.errors[entry] = data.error || 'No se pudo cargar la página.';
+    }
+  } catch (err) {
+    state.web.errors[entry] = err.message || 'No se pudo contactar con el servidor de la vista previa.';
+  } finally {
+    delete state.web.loading[entry];
+    const current = curTab();
+    if (state.open.has('navegador') && current && current.stack[current.index] === entry) {
+      rerenderWindow('navegador');
+    }
+  }
+}
+
+function ensureCurrentWeb() {
+  const tab = curTab();
+  const id = tab && tab.stack[tab.index];
+  if (isWebEntry(id)) ensureWebPage(id);
 }
 
 function wireBrowser(win) {
@@ -1176,11 +1412,19 @@ function wireBrowser(win) {
   $$('[data-nav]', body).forEach((btn) => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.nav;
-      if (action === 'back' && tab.index > 0) { tab.index--; rerenderWindow('navegador'); }
-      else if (action === 'forward' && tab.index < tab.stack.length - 1) { tab.index++; rerenderWindow('navegador'); }
-      else if (action === 'reload') { toast('Recargando…', 900); rerenderWindow('navegador'); }
-      else if (action === 'home') browserGo('inicio');
-      else if (action === 'search') {
+      if (action === 'back' && tab.index > 0) {
+        tab.index--;
+        rerenderWindow('navegador');
+        ensureCurrentWeb();
+      } else if (action === 'forward' && tab.index < tab.stack.length - 1) {
+        tab.index++;
+        rerenderWindow('navegador');
+        ensureCurrentWeb();
+      } else if (action === 'reload') {
+        browserReload();
+      } else if (action === 'home') {
+        browserGo('inicio');
+      } else if (action === 'search') {
         const input = $('[data-url]', body);
         if (input) { input.focus(); input.select(); }
       }
@@ -1189,6 +1433,18 @@ function wireBrowser(win) {
 
   $$('[data-page]', body).forEach((btn) => {
     btn.addEventListener('click', () => browserGo(btn.dataset.page));
+  });
+
+  $$('[data-quick]', body).forEach((btn) => {
+    btn.addEventListener('click', () => browserGo('u:' + btn.dataset.quick));
+  });
+
+  $$('[data-web-form]', body).forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = $('[data-web-q]', form);
+      browserNavigate(input ? input.value : '');
+    });
   });
 
   $$('[data-tab]', body).forEach((el) => {
@@ -1223,9 +1479,56 @@ function wireBrowser(win) {
     btn.addEventListener('click', () => toast(`«${btn.dataset.dl}» · descarga simulada`));
   });
 
+  const frame = $('[data-web-frame]', body);
+  if (frame) {
+    const entry = frame.dataset.webEntry;
+    const page = webPage(entry);
+    const stateEl = $('[data-web-state]', body);
+    if (page) {
+      frame.srcdoc = page.html;
+      frame.addEventListener('load', () => { if (stateEl) stateEl.hidden = true; });
+    } else {
+      if (stateEl) stateEl.hidden = false;
+      ensureWebPage(entry);
+    }
+  }
+
   const title = win.querySelector('.win-title');
   if (title) title.textContent = `Firefox — ${sitePageTitle(tab.stack[tab.index])}`;
 }
+
+/* Puente de navegación de las webs reales (iframe aislado). */
+window.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || typeof data !== 'object') return;
+  const frame = [...document.querySelectorAll('iframe[data-web-frame]')]
+    .find((f) => f.contentWindow === event.source);
+  if (!frame) return;
+  const entry = frame.dataset.webEntry;
+
+  if (data.type === 'liquidos:navigate' && typeof data.url === 'string') {
+    const target = data.url.slice(0, 4096);
+    if (!/^https?:\/\//i.test(target)) return;
+    browserGo('u:' + target);
+    return;
+  }
+
+  if (data.type === 'liquidos:title' && typeof data.title === 'string') {
+    const page = state.web.pages[entry];
+    const clean = data.title.replace(/\s+/g, ' ').trim().slice(0, 160);
+    if (page && clean && clean !== page.title) {
+      page.title = clean;
+      const activeTab = $('.ff-tab.on .ff-tab-title', $('#windows'));
+      if (activeTab) activeTab.textContent = clean;
+      const winTitle = $('.window[data-app="navegador"] .win-title', $('#windows'));
+      if (winTitle) winTitle.textContent = `Firefox — ${clean}`;
+    }
+  }
+
+  if (data.type === 'liquidos:notice' && typeof data.text === 'string') {
+    toast(data.text.slice(0, 220));
+  }
+});
 
 /* ---------------------------- Correo ---------------------------- */
 
@@ -1428,41 +1731,286 @@ function swInstalled(id) {
   return state.software.installed.includes(id);
 }
 
-function viewSoftware() {
+function swInstalled(id) {
+  return state.software.installed.includes(id);
+}
+
+/* ------------------- Tienda real: estado y utilidades ------------------- */
+
+function realInstalled(id) {
+  const list = state.software.installedReal;
+  return Array.isArray(list) && list.some((a) => a.id === id);
+}
+
+function lastLine(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const line = lines.length ? lines[lines.length - 1] : '';
+  return line.length > 150 ? line.slice(0, 150) + '…' : line;
+}
+
+function letterIcon(name) {
+  const ch = (name || '?').trim().charAt(0).toUpperCase() || '?';
+  return `<span class="app-icon sw-ico sw-letter" aria-hidden="true">${escapeHtml(ch)}</span>`;
+}
+
+function jobHtml(appId, job, label) {
+  if (job.state === 'fallback') {
+    return `<button class="btn primary" data-sw-real-fallback="${escapeHtml(appId)}">Cómo instalar</button>`;
+  }
+  const running = job.state === 'running' || job.state === 'starting';
+  const text = running ? (label || 'Instalando…') : job.state === 'done' ? 'Completado' : 'Con errores';
+  return `
+  <div class="sw-job" data-sw-job="${escapeHtml(appId)}">
+    <div class="sw-job-head">
+      <span class="sw-job-label">${escapeHtml(text)}</span>
+      <span>${Math.round(job.progress || 0)}%</span>
+    </div>
+    <div class="sw-progress"><span style="width:${Math.round(job.progress || 0)}%"></span></div>
+    <small class="sw-job-out">${escapeHtml(lastLine(job.output) || '')}</small>
+  </div>`;
+}
+
+function storeStatusHtml(sw) {
+  if (!sw.status) {
+    return `<div class="sw-status"><span class="sw-dot wait"></span> Conectando con Flathub…</div>`;
+  }
+  if (sw.status.mode === 'real') {
+    return `<div class="sw-status real"><span class="sw-dot"></span>
+      Flathub conectado · las instalaciones se hacen de verdad con Flatpak${sw.status.flathub ? '' : ' (remoto pendiente)'}</div>`;
+  }
+  return `<div class="sw-status demo"><span class="sw-dot"></span>
+    Catálogo y búsquedas reales de Flathub · este equipo no tiene Flatpak, así que no puede instalar</div>`;
+}
+
+function storeNoticeHtml(notice) {
+  return `
+  <div class="sw-notice">
+    <div class="sw-notice-head">${icons('downloadCloud')} <b>${escapeHtml(notice.title || 'No se pudo completar la operación')}</b></div>
+    <p>${escapeHtml(notice.text || '')}</p>
+    ${notice.command ? `<code>${escapeHtml(notice.command)}</code>` : ''}
+    <div class="sw-notice-actions">
+      ${notice.command ? `<button class="btn" data-copy="${escapeHtml(notice.command)}">Copiar comando</button>` : ''}
+      ${notice.url ? `<a class="btn" href="${escapeHtml(notice.url)}" target="_blank" rel="noreferrer">Ver en Flathub</a>` : ''}
+      <button class="btn" data-sw-dismiss="1">Cerrar</button>
+    </div>
+  </div>`;
+}
+
+function localCard(it) {
   const sw = state.software;
-  const installedCount = sw.installed.length;
+  const installed = swInstalled(it.id);
+  const prog = sw.progress[it.id];
+  return `
+  <article class="sw-card" data-sw-app="${it.id}" data-sw-name="${escapeHtml(it.name.toLowerCase())}" data-sw-summary="${escapeHtml(it.summary.toLowerCase())}">
+    <span class="app-icon sw-ico" style="--c1:${it.c1};--c2:${it.c2}">${svg(it.glyph)}</span>
+    <div class="sw-info">
+      <b>${escapeHtml(it.name)}</b>
+      <small>${escapeHtml(it.summary)}</small>
+      <span class="sw-meta">${escapeHtml(it.cat)} · ${it.size} · ★ ${it.rating.toFixed(1)}</span>
+    </div>
+    <div class="sw-actions">
+      ${prog !== undefined
+        ? `<div class="sw-progress" data-sw-progress="${it.id}"><span style="width:${Math.round(prog)}%"></span></div>`
+        : installed
+          ? `${it.app ? `<button class="btn primary" data-sw-open="${it.id}">Abrir</button>` : ''}
+             ${sw.updates.includes(it.id) ? `<button class="btn" data-sw-update="${it.id}">Actualizar</button>` : ''}
+             ${it.core ? '' : `<button class="btn" data-sw-remove="${it.id}">Quitar</button>`}`
+          : `<button class="btn primary" data-sw-install="${it.id}">Instalar</button>`}
+    </div>
+  </article>`;
+}
 
+function realCard(it) {
+  const sw = state.software;
+  const installed = realInstalled(it.id);
+  const job = sw.jobs[it.id];
+  const letter = escapeHtml((it.name || '?').trim().charAt(0).toUpperCase() || '?');
+  return `
+  <article class="sw-card" data-sw-app="${escapeHtml(it.id)}" data-sw-name="${escapeHtml(it.name.toLowerCase())}" data-sw-summary="${escapeHtml((it.summary || '').toLowerCase())}">
+    <span class="app-icon sw-ico sw-real-ico">
+      <span class="sw-letter-fallback">${letter}</span>
+      ${it.icon ? `<img src="${escapeHtml(it.icon)}" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+    </span>
+    <div class="sw-info">
+      <b>${escapeHtml(it.name)}${it.verified ? ' <span class="sw-verified" title="Verificada por Flathub">✔</span>' : ''}</b>
+      <small>${escapeHtml(it.summary || '')}</small>
+      <span class="sw-meta">${escapeHtml(it.developer || 'Flathub')} · ${escapeHtml(it.category || 'Utilidades')} · ${escapeHtml(it.id)}</span>
+    </div>
+    <div class="sw-actions">
+      ${job
+        ? jobHtml(it.id, job)
+        : installed
+          ? `<span class="sw-installed-tag">Instalada</span><button class="btn" data-sw-real-remove="${escapeHtml(it.id)}">Quitar</button>`
+          : `<button class="btn primary" data-sw-real-install="${escapeHtml(it.id)}" data-sw-name="${escapeHtml(it.name)}">Instalar</button>`}
+    </div>
+  </article>`;
+}
+
+function activeJob(job) {
+  return job && (job.state === 'running' || job.state === 'starting') ? job : null;
+}
+
+function installedRealCard(app) {
+  const job = activeJob(state.software.jobs[app.id]);
+  return `
+  <article class="sw-card" data-sw-name="${escapeHtml((app.name || '').toLowerCase())}" data-sw-summary="${escapeHtml((app.id || '').toLowerCase())}">
+    ${letterIcon(app.name)}
+    <div class="sw-info">
+      <b>${escapeHtml(app.name || app.id)}</b>
+      <small>${escapeHtml(app.id)}</small>
+      <span class="sw-meta">${app.version ? `Versión ${escapeHtml(app.version)} · ` : ''}${escapeHtml(app.origin || 'Flathub')}${app.size ? ` · ${escapeHtml(app.size)}` : ''}</span>
+    </div>
+    <div class="sw-actions">
+      ${job
+        ? jobHtml(app.id, job, 'Quitando…')
+        : `<button class="btn" data-copy="flatpak run ${escapeHtml(app.id)}">Copiar «flatpak run»</button>
+           <button class="btn danger" data-sw-real-remove="${escapeHtml(app.id)}">Quitar</button>`}
+    </div>
+  </article>`;
+}
+
+function localResultsHtml(sw) {
   let items = CATALOG.slice();
-  if (sw.tab === 'instalados') items = items.filter((it) => swInstalled(it.id));
-  if (sw.tab === 'actualizaciones') items = items.filter((it) => sw.updates.includes(it.id));
   if (sw.cat !== 'todas') items = items.filter((it) => it.cat === sw.cat);
+  const q = sw.query.trim().toLowerCase();
+  if (q) items = items.filter((it) => it.name.toLowerCase().includes(q) || it.summary.toLowerCase().includes(q));
+  return `
+  <div class="sw-list" data-sw-list>
+    ${items.map(localCard).join('')}
+    <div class="sw-empty" ${items.length ? 'hidden' : ''}>No hay aplicaciones que coincidan con «${escapeHtml(sw.query)}»${sw.cat !== 'todas' ? ' en ' + escapeHtml(sw.cat) : ''}.</div>
+  </div>`;
+}
 
-  if (!items.length) {
-    items = [];
+function realResultsHtml(sw) {
+  if (sw.realLoading && !sw.real.length) {
+    const skeletons = Array.from({ length: 5 }, () => `
+      <div class="sw-skel"><span></span><div><i></i><i></i></div></div>`).join('');
+    return `<div class="sw-list" data-sw-list>${skeletons}</div>`;
+  }
+  if (sw.realError) {
+    return `
+    <div class="sw-list" data-sw-list>
+      <div class="sw-empty">No se pudo consultar Flathub: ${escapeHtml(sw.realError)}.
+        <div><button class="btn" data-sw-clear="1">Volver al catálogo local</button></div>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="sw-section-label">
+    Resultados reales de Flathub · ${sw.real.length}${sw.realLoading ? ' · actualizando…' : ''}
+    <button class="sw-link" data-sw-clear="1">Limpiar</button>
+  </div>
+  <div class="sw-list" data-sw-list>
+    ${sw.real.map(realCard).join('')}
+    <div class="sw-empty" ${sw.real.length ? 'hidden' : ''}>No hay resultados para «${escapeHtml(sw.realQuery)}» en Flathub.</div>
+  </div>`;
+}
+
+function localInstalledHtml(sw) {
+  const items = CATALOG.filter((it) => swInstalled(it.id));
+  return `
+  <div class="sw-list" data-sw-list>
+    ${items.map(localCard).join('')}
+    <div class="sw-empty" ${items.length ? 'hidden' : ''}>No hay aplicaciones instaladas en la demo.</div>
+  </div>`;
+}
+
+function installedRealHtml(sw) {
+  if (sw.installedLoading && sw.installedReal === null) {
+    return `<div class="sw-list" data-sw-list><div class="sw-loading">Leyendo las aplicaciones instaladas con Flatpak…</div></div>`;
+  }
+  if (sw.installedError) {
+    return `<div class="sw-list" data-sw-list><div class="sw-empty">${escapeHtml(sw.installedError)}
+      <div><button class="btn" data-sw-check-installed="1">Reintentar</button></div></div></div>`;
+  }
+  const apps = sw.installedReal || [];
+  return `
+  <div class="sw-section-label">Instaladas con Flatpak · ${apps.length}
+    <button class="sw-link" data-sw-check-installed="1">Actualizar lista</button>
+  </div>
+  <div class="sw-list" data-sw-list>
+    ${apps.map(installedRealCard).join('')}
+    <div class="sw-empty" ${apps.length ? 'hidden' : ''}>Todavía no hay aplicaciones Flatpak instaladas. Busca una en «Descubrir» e instálala.</div>
+  </div>`;
+}
+
+function localUpdatesHtml(sw) {
+  const items = CATALOG.filter((it) => sw.updates.includes(it.id));
+  return `
+  ${items.length ? `
+    <div class="sw-banner">
+      <span>${icons('downloadCloud')} Hay ${items.length} actualizaciones disponibles</span>
+      <button class="btn primary" data-sw-update-all="1">Actualizar todo</button>
+    </div>` : ''}
+  <div class="sw-list" data-sw-list>
+    ${items.map(localCard).join('')}
+    <div class="sw-empty" ${items.length ? 'hidden' : ''}>Todo está al día.</div>
+  </div>`;
+}
+
+function updatesRealHtml(sw) {
+  const allJob = activeJob(sw.jobs['__all__']);
+  const apps = sw.updatesReal || [];
+  let body;
+  if (sw.updatesLoading && sw.updatesReal === null) {
+    body = `<div class="sw-loading">Buscando actualizaciones en Flathub…</div>`;
+  } else if (sw.updatesError) {
+    body = `<div class="sw-empty">${escapeHtml(sw.updatesError)}
+      <div><button class="btn" data-sw-check-updates="1">Reintentar</button></div></div>`;
+  } else if (sw.updatesReal === null) {
+    body = `<div class="sw-empty">Pulsa «Buscar actualizaciones» para consultar Flatpak.
+      <div><button class="btn primary" data-sw-check-updates="1">Buscar actualizaciones</button></div></div>`;
+  } else if (!apps.length) {
+    body = `<div class="sw-empty">Todo está al día.
+      <div><button class="btn" data-sw-check-updates="1">Volver a comprobar</button></div></div>`;
+  } else {
+    body = apps.map((app) => {
+      const job = activeJob(sw.jobs[app.id]);
+      return `
+      <article class="sw-card" data-sw-name="${escapeHtml((app.name || '').toLowerCase())}" data-sw-summary="${escapeHtml((app.id || '').toLowerCase())}">
+        ${letterIcon(app.name)}
+        <div class="sw-info">
+          <b>${escapeHtml(app.name || app.id)}</b>
+          <small>${escapeHtml(app.id)}</small>
+          <span class="sw-meta">${app.version ? `Versión ${escapeHtml(app.version)} · ` : ''}${escapeHtml(app.origin || 'Flathub')}</span>
+        </div>
+        <div class="sw-actions">
+          ${job ? jobHtml(app.id, job, 'Actualizando…')
+            : `<button class="btn primary" data-sw-real-update="${escapeHtml(app.id)}">Actualizar</button>`}
+        </div>
+      </article>`;
+    }).join('');
   }
 
-  const card = (it) => {
-    const installed = swInstalled(it.id);
-    const prog = sw.progress[it.id];
-    return `
-    <article class="sw-card" data-sw-app="${it.id}" data-sw-name="${escapeHtml(it.name.toLowerCase())}" data-sw-summary="${escapeHtml(it.summary.toLowerCase())}">
-      <span class="app-icon sw-ico" style="--c1:${it.c1};--c2:${it.c2}">${svg(it.glyph)}</span>
-      <div class="sw-info">
-        <b>${escapeHtml(it.name)}</b>
-        <small>${escapeHtml(it.summary)}</small>
-        <span class="sw-meta">${escapeHtml(it.cat)} · ${it.size} · ★ ${it.rating.toFixed(1)}</span>
-      </div>
-      <div class="sw-actions">
-        ${prog !== undefined
-          ? `<div class="sw-progress" data-sw-progress="${it.id}"><span style="width:${Math.round(prog)}%"></span></div>`
-          : installed
-            ? `${it.app ? `<button class="btn primary" data-sw-open="${it.id}">Abrir</button>` : ''}
-               ${sw.updates.includes(it.id) ? `<button class="btn" data-sw-update="${it.id}">Actualizar</button>` : ''}
-               ${it.core ? '' : `<button class="btn" data-sw-remove="${it.id}">Quitar</button>`}`
-            : `<button class="btn primary" data-sw-install="${it.id}">Instalar</button>`}
-      </div>
-    </article>`;
-  };
+  return `
+  ${apps.length ? `
+    <div class="sw-banner">
+      <span>${icons('downloadCloud')} ${apps.length} actualizaciones disponibles en Flathub</span>
+      ${allJob ? jobHtml('__all__', allJob, 'Actualizando todo…')
+        : `<button class="btn primary" data-sw-real-update-all="1">Actualizar todo</button>`}
+    </div>` : ''}
+  <div class="sw-list" data-sw-list>${body}</div>`;
+}
+
+function viewSoftware() {
+  const sw = state.software;
+  const realMode = Boolean(sw.status && sw.status.mode === 'real');
+  const searching = sw.tab === 'descubrir' && sw.query.trim().length >= 2;
+  const installedCount = realMode
+    ? (sw.installedReal ? sw.installedReal.length : 0)
+    : sw.installed.length;
+  const updatesCount = realMode
+    ? (sw.updatesReal ? sw.updatesReal.length : 0)
+    : sw.updates.length;
+
+  let content;
+  if (sw.tab === 'descubrir') {
+    content = searching ? realResultsHtml(sw) : localResultsHtml(sw);
+  } else if (sw.tab === 'instalados') {
+    content = realMode ? installedRealHtml(sw) : localInstalledHtml(sw);
+  } else {
+    content = realMode ? updatesRealHtml(sw) : localUpdatesHtml(sw);
+  }
 
   return `
   <div class="software">
@@ -1470,33 +2018,307 @@ function viewSoftware() {
       <div class="seg2 sw-tabs">
         <button data-sw-tab="descubrir" class="${sw.tab === 'descubrir' ? 'on' : ''}">Descubrir</button>
         <button data-sw-tab="instalados" class="${sw.tab === 'instalados' ? 'on' : ''}">Instalados · ${installedCount}</button>
-        <button data-sw-tab="actualizaciones" class="${sw.tab === 'actualizaciones' ? 'on' : ''}">Actualizaciones · ${sw.updates.length}</button>
+        <button data-sw-tab="actualizaciones" class="${sw.tab === 'actualizaciones' ? 'on' : ''}">Actualizaciones · ${updatesCount}</button>
       </div>
-      <input class="finder-search" data-sw-search placeholder="Buscar aplicaciones" value="${escapeHtml(sw.query)}" aria-label="Buscar aplicaciones">
+      <input class="finder-search" data-sw-search placeholder="Buscar en Flathub" value="${escapeHtml(sw.query)}" aria-label="Buscar aplicaciones">
     </div>
 
-    ${sw.tab === 'descubrir' ? `
+    ${storeStatusHtml(sw)}
+    ${sw.notice ? storeNoticeHtml(sw.notice) : ''}
+
+    ${sw.tab === 'descubrir' && !searching ? `
       <div class="sw-cats">
         ${SOFTWARE_CATS.map((c) => `<button class="sw-chip ${sw.cat === c ? 'on' : ''}" data-sw-cat="${c}">${c === 'todas' ? 'Todas' : c}</button>`).join('')}
       </div>` : ''}
 
-    ${sw.tab === 'actualizaciones' && sw.updates.length ? `
-      <div class="sw-banner">
-        <span>${icons('downloadCloud')} Hay ${sw.updates.length} actualizaciones disponibles · Flathub y Debian</span>
-        <button class="btn primary" data-sw-update-all="1">Actualizar todo</button>
-      </div>` : ''}
-
-    <div class="sw-list" data-sw-list>
-      ${items.map(card).join('')}
-      <div class="sw-empty" ${items.length ? 'hidden' : ''}>No hay aplicaciones que coincidan con «${escapeHtml(sw.query)}»${sw.cat !== 'todas' ? ' en ' + escapeHtml(sw.cat) : ''}.</div>
-    </div>
+    ${content}
 
     <div class="sw-foot">
-      <span>Flathub conectado · ${installedCount} aplicaciones instaladas</span>
-      <span>Los paquetes Debian también están disponibles</span>
+      <span>${realMode
+        ? (sw.status && sw.status.flathub ? 'Flathub conectado' : 'Flathub sin remoto') + ' · instalación real'
+        : 'Catálogo real de Flathub'}</span>
+      <span>${realMode
+        ? `${installedCount} aplicaciones Flatpak instaladas`
+        : 'Modo demostración · sin Flatpak en este equipo'}</span>
     </div>
   </div>`;
 }
+
+/* ------------------- Tienda real: operaciones asíncronas ------------------- */
+
+async function ensureStoreStatus() {
+  const sw = state.software;
+  if (sw.status || sw.statusLoading) return;
+  sw.statusLoading = true;
+  try {
+    sw.status = await api('/api/store/status');
+  } catch {
+    sw.status = { ok: false, mode: 'demo', flatpak: { available: false }, error: 'Sin conexión con el servidor de la vista previa' };
+  }
+  sw.statusLoading = false;
+  if (state.open.has('software')) rerenderWindow('software');
+}
+
+async function ensureInstalledReal(force = false) {
+  const sw = state.software;
+  if (!sw.status || sw.status.mode !== 'real') return;
+  if (sw.installedLoading) return;
+  if (sw.installedReal !== null && !force) return;
+  sw.installedLoading = true;
+  sw.installedError = '';
+  try {
+    const data = await api('/api/store/installed');
+    sw.installedReal = data.ok ? (data.apps || []) : [];
+    if (!data.ok) sw.installedError = data.error || 'No se pudo leer la lista de aplicaciones.';
+  } catch {
+    sw.installedReal = [];
+    sw.installedError = 'No se pudo contactar con el servidor de la vista previa.';
+  }
+  sw.installedLoading = false;
+  if (state.open.has('software')) rerenderWindow('software');
+}
+
+async function ensureUpdatesReal(force = false) {
+  const sw = state.software;
+  if (!sw.status || sw.status.mode !== 'real') return;
+  if (sw.updatesLoading) return;
+  if (sw.updatesReal !== null && !force) return;
+  sw.updatesLoading = true;
+  sw.updatesError = '';
+  try {
+    const data = await api('/api/store/updates');
+    sw.updatesReal = data.ok ? (data.apps || []) : [];
+    if (!data.ok) sw.updatesError = data.error || 'No se pudieron consultar las actualizaciones.';
+  } catch {
+    sw.updatesReal = [];
+    sw.updatesError = 'No se pudo contactar con el servidor de la vista previa.';
+  }
+  sw.updatesLoading = false;
+  if (state.open.has('software')) rerenderWindow('software');
+}
+
+function rerenderSoftwareKeepFocus() {
+  // El repintado genérico ya conserva el foco y el cursor del buscador.
+  rerenderWindow('software');
+}
+
+async function runStoreSearch(query) {
+  const sw = state.software;
+  sw.realLoading = true;
+  sw.realQuery = query;
+  sw.realError = '';
+  rerenderSoftwareKeepFocus();
+  try {
+    const data = await api('/api/store/search?q=' + encodeURIComponent(query));
+    if (sw.realQuery !== query) return;
+    if (data.ok) {
+      sw.real = data.hits || [];
+    } else {
+      sw.real = [];
+      sw.realError = data.error || 'Flathub no respondió';
+    }
+  } catch {
+    if (sw.realQuery !== query) return;
+    sw.real = [];
+    sw.realError = 'No se pudo contactar con el servidor de la vista previa.';
+  }
+  sw.realLoading = false;
+  if (state.open.has('software')) rerenderSoftwareKeepFocus();
+}
+
+function updateSoftwareJob(appId, force = false) {
+  const sw = state.software;
+  const job = sw.jobs[appId];
+  if (!job) return;
+  if (force) {
+    if (state.open.has('software')) rerenderWindow('software');
+    return;
+  }
+  const el = [...document.querySelectorAll('[data-sw-job]')].find((e) => e.dataset.swJob === appId);
+  if (!el) return;
+  const bar = el.querySelector('.sw-progress span');
+  if (bar) bar.style.width = Math.round(job.progress || 0) + '%';
+  const out = el.querySelector('.sw-job-out');
+  if (out) out.textContent = lastLine(job.output) || '';
+  const label = el.querySelector('.sw-job-label');
+  if (label) label.textContent = job.label || 'Instalando…';
+}
+
+function pollJob(appId, jobId, kind) {
+  const sw = state.software;
+  const tick = async () => {
+    const job = sw.jobs[appId];
+    if (!job || job.id !== jobId) return;
+    let data = null;
+    try {
+      data = await api('/api/store/job/' + jobId);
+    } catch { /* se reintenta abajo */ }
+    if (!data || !data.ok) {
+      job.state = 'error';
+      job.output = (job.output || '') + '\nNo se pudo consultar el estado del trabajo.';
+      updateSoftwareJob(appId, true);
+      return;
+    }
+    job.state = data.state;
+    job.output = data.output || '';
+    job.command = data.command || job.command;
+    if (data.state === 'running') {
+      job.progress = Math.min(92, (job.progress || 8) + 5 + Math.random() * 6);
+      updateSoftwareJob(appId);
+      setTimeout(tick, 900);
+      return;
+    }
+    job.progress = 100;
+    updateSoftwareJob(appId, true);
+    if (data.state === 'done') {
+      toast(kind === 'install' ? 'Aplicación instalada' : kind === 'remove' ? 'Aplicación desinstalada' : 'Actualización completada');
+      beep(760);
+      setTimeout(() => {
+        delete sw.jobs[appId];
+        if (kind === 'install' || kind === 'remove') ensureInstalledReal(true);
+        if (kind === 'update') { ensureInstalledReal(true); ensureUpdatesReal(true); }
+        if (state.open.has('software')) rerenderWindow('software');
+      }, 900);
+    } else {
+      toast('La operación terminó con errores', 3200);
+      beep(240);
+    }
+  };
+  tick();
+}
+
+async function softwareInstallReal(appId, name) {
+  const sw = state.software;
+  if (sw.jobs[appId] && sw.jobs[appId].state === 'running') return;
+  sw.jobs[appId] = { state: 'starting', progress: 4, output: '', command: '', label: 'Preparando…' };
+  updateSoftwareJob(appId, true);
+  let data;
+  try {
+    data = await api('/api/store/install', { method: 'POST', body: { appId } });
+  } catch {
+    data = { ok: false, error: 'No se pudo contactar con el servidor de la vista previa.' };
+  }
+  if (!data.ok) {
+    sw.jobs[appId] = {
+      state: 'fallback',
+      progress: 0,
+      output: '',
+      command: data.command || `flatpak install flathub ${appId}`,
+      url: data.url || `https://flathub.org/apps/${appId}`,
+      error: data.error || 'No se pudo iniciar la instalación.'
+    };
+    sw.notice = {
+      title: `No se pudo instalar ${name || appId}`,
+      text: data.error || 'No se pudo iniciar la instalación.',
+      command: sw.jobs[appId].command,
+      url: sw.jobs[appId].url
+    };
+    if (state.open.has('software')) rerenderWindow('software');
+    toast(data.error || 'No se pudo instalar', 3200);
+    return;
+  }
+  sw.jobs[appId] = {
+    id: data.job,
+    state: 'running',
+    progress: 8,
+    output: '',
+    command: data.command || '',
+    label: 'Instalando…'
+  };
+  if (state.open.has('software')) rerenderWindow('software');
+  toast(`Instalando ${name || appId}…`, 1600);
+  pollJob(appId, data.job, 'install');
+}
+
+async function softwareRemoveReal(appId) {
+  const sw = state.software;
+  if (sw.jobs[appId] && sw.jobs[appId].state === 'running') return;
+  sw.jobs[appId] = { state: 'starting', progress: 6, output: '', command: '', label: 'Quitando…' };
+  updateSoftwareJob(appId, true);
+  let data;
+  try {
+    data = await api('/api/store/remove', { method: 'POST', body: { appId } });
+  } catch {
+    data = { ok: false, error: 'No se pudo contactar con el servidor de la vista previa.' };
+  }
+  if (!data.ok) {
+    sw.jobs[appId] = {
+      state: 'fallback',
+      progress: 0,
+      output: '',
+      command: data.command || `flatpak uninstall ${appId}`,
+      url: data.url || `https://flathub.org/apps/${appId}`,
+      error: data.error || 'No se pudo iniciar la desinstalación.'
+    };
+    sw.notice = {
+      title: `No se pudo quitar ${appId}`,
+      text: sw.jobs[appId].error,
+      command: sw.jobs[appId].command,
+      url: sw.jobs[appId].url
+    };
+    if (state.open.has('software')) rerenderWindow('software');
+    return;
+  }
+  sw.jobs[appId] = {
+    id: data.job,
+    state: 'running',
+    progress: 10,
+    output: '',
+    command: data.command || '',
+    label: 'Quitando…'
+  };
+  if (state.open.has('software')) rerenderWindow('software');
+  pollJob(appId, data.job, 'remove');
+}
+
+async function softwareUpdateReal(appId) {
+  const sw = state.software;
+  const key = appId || '__all__';
+  sw.jobs[key] = {
+    state: 'starting',
+    progress: 6,
+    output: '',
+    command: '',
+    label: appId ? 'Actualizando…' : 'Actualizando todo…'
+  };
+  updateSoftwareJob(key, true);
+  let data;
+  try {
+    data = await api('/api/store/update', { method: 'POST', body: appId ? { appId } : {} });
+  } catch {
+    data = { ok: false, error: 'No se pudo contactar con el servidor de la vista previa.' };
+  }
+  if (!data.ok) {
+    sw.jobs[key] = {
+      state: 'fallback',
+      progress: 0,
+      output: '',
+      command: data.command || 'flatpak update',
+      url: data.url || 'https://flathub.org/setup',
+      error: data.error || 'No se pudo iniciar la actualización.'
+    };
+    sw.notice = {
+      title: 'No se pudo actualizar',
+      text: sw.jobs[key].error,
+      command: sw.jobs[key].command,
+      url: sw.jobs[key].url
+    };
+    if (state.open.has('software')) rerenderWindow('software');
+    return;
+  }
+  sw.jobs[key] = {
+    id: data.job,
+    state: 'running',
+    progress: 10,
+    output: '',
+    command: data.command || '',
+    label: appId ? 'Actualizando…' : 'Actualizando todo…'
+  };
+  if (state.open.has('software')) rerenderWindow('software');
+  pollJob(key, data.job, 'update');
+}
+
+/* ------------------- Tienda: acciones de la demo ------------------- */
 
 function softwareInstall(id) {
   const sw = state.software;
@@ -1589,14 +2411,29 @@ function filterSoftware(win) {
   if (empty) empty.hidden = count > 0;
 }
 
+async function copyCommand(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Comando copiado al portapapeles');
+  } catch {
+    toast(text, 5000);
+  }
+}
+
 function wireSoftware(win) {
   const body = win.querySelector('.win-body');
   const sw = state.software;
+
+  ensureStoreStatus();
 
   $$('[data-sw-tab]', body).forEach((btn) => {
     btn.addEventListener('click', () => {
       sw.tab = btn.dataset.swTab;
       sw.query = '';
+      sw.real = [];
+      sw.realQuery = '';
+      sw.realError = '';
+      sw.notice = null;
       rerenderWindow('software');
     });
   });
@@ -1627,11 +2464,91 @@ function wireSoftware(win) {
   const all = $('[data-sw-update-all]', body);
   if (all) all.addEventListener('click', softwareUpdateAll);
 
+  /* Operaciones reales con Flatpak */
+  $$('[data-sw-real-install]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareInstallReal(btn.dataset.swRealInstall, btn.dataset.swName));
+  });
+  $$('[data-sw-real-remove]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareRemoveReal(btn.dataset.swRealRemove));
+  });
+  $$('[data-sw-real-update]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareUpdateReal(btn.dataset.swRealUpdate));
+  });
+  const allReal = $('[data-sw-real-update-all]', body);
+  if (allReal) allReal.addEventListener('click', () => softwareUpdateReal(''));
+
+  $$('[data-sw-check-updates]', body).forEach((btn) => {
+    btn.addEventListener('click', () => ensureUpdatesReal(true));
+  });
+  $$('[data-sw-check-installed]', body).forEach((btn) => {
+    btn.addEventListener('click', () => ensureInstalledReal(true));
+  });
+
+  $$('[data-sw-real-fallback]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const job = sw.jobs[btn.dataset.swRealFallback];
+      if (!job) return;
+      sw.notice = {
+        title: 'Instalación real disponible en LiquidOS',
+        text: job.error || 'Este equipo no puede instalar Flatpaks. En la ISO de LiquidOS funciona desde el Centro de software.',
+        command: job.command,
+        url: job.url
+      };
+      rerenderWindow('software');
+    });
+  });
+
+  $$('[data-copy]', body).forEach((btn) => {
+    btn.addEventListener('click', () => copyCommand(btn.dataset.copy));
+  });
+
+  $$('[data-sw-clear]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sw.query = '';
+      sw.real = [];
+      sw.realQuery = '';
+      sw.realError = '';
+      sw.realLoading = false;
+      clearTimeout(sw.searchTimer);
+      rerenderSoftwareKeepFocus();
+    });
+  });
+
+  $$('[data-sw-dismiss]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sw.notice = null;
+      rerenderWindow('software');
+    });
+  });
+
+  if (sw.status && sw.status.mode === 'real') {
+    ensureInstalledReal();
+    if (sw.tab === 'actualizaciones') ensureUpdatesReal();
+  }
+
   const search = $('[data-sw-search]', body);
   if (search) {
     search.addEventListener('input', () => {
       sw.query = search.value;
+      const q = sw.query.trim();
+      if (sw.tab !== 'descubrir') {
+        filterSoftware(win);
+        return;
+      }
+      if (q.length < 2) {
+        const hadReal = Boolean(sw.realQuery || sw.real.length);
+        clearTimeout(sw.searchTimer);
+        sw.real = [];
+        sw.realQuery = '';
+        sw.realError = '';
+        sw.realLoading = false;
+        if (hadReal) rerenderSoftwareKeepFocus();
+        else filterSoftware(win);
+        return;
+      }
       filterSoftware(win);
+      clearTimeout(sw.searchTimer);
+      sw.searchTimer = setTimeout(() => runStoreSearch(q), 420);
     });
   }
 }
@@ -1907,7 +2824,7 @@ const TERM_HELP = `Comandos disponibles:<br>
 <span class="c">free -h</span> · <span class="c">df -h</span> · <span class="c">ps</span> · <span class="c">ping</span> · <span class="c">curl</span> · <span class="c">clear</span><br><br>
 <b>Paquetes y ajustes</b><br>
 <span class="c">sudo apt update</span> · <span class="c">sudo apt install vlc</span> · <span class="c">apt search foto</span><br>
-<span class="c">flatpak install flathub org.gimp.GIMP</span> · <span class="c">liquidos doctor</span> · <span class="c">liquidos store</span><br>
+<span class="c">flatpak search vlc</span> · <span class="c">flatpak install flathub org.gimp.GIMP</span> · <span class="c">liquidos doctor</span> · <span class="c">liquidos store</span><br>
 <span class="c">theme light|dark</span> · <span class="c">accent azul</span> · <span class="c">wallpaper oceano</span><br>
 <span class="c">open firefox|correo|software|ajustes</span> · <span class="c">history</span> · <span class="c">exit</span>`;
 
@@ -2498,6 +3415,25 @@ function termStage(seg, input) {
     case 'flatpak': {
       const sub = (args[0] || '').toLowerCase();
       if (sub === 'remotes') return { text: 'flathub\thttps://dl.flathub.org/repo/\n  Sistema\n  Prioridad 1' };
+      if (sub === 'search') {
+        const q = args.slice(1).join(' ').trim().toLowerCase();
+        if (!q) return { text: 'Uso: flatpak search <texto>' };
+        const source = [...(state.software.real || []), ...CATALOG];
+        const seen = new Set();
+        const rows = [];
+        for (const it of source) {
+          if (!it || !it.id || seen.has(it.id)) continue;
+          const hay = `${it.name || ''} ${it.id} ${it.summary || ''}`.toLowerCase();
+          if (!hay.includes(q)) continue;
+          seen.add(it.id);
+          rows.push(`${it.name || it.id}\t${it.id}\t${(it.summary || '').slice(0, 60)}`);
+        }
+        return {
+          text: rows.length
+            ? rows.slice(0, 12).join('\n') + (rows.length > 12 ? `\n… y ${rows.length - 12} más. Ábrelo en el Centro de software.` : '')
+            : `No se encontraron aplicaciones para «${q}» en Flathub.\nPrueba en el Centro de software, que consulta el catálogo completo.`
+        };
+      }
       if (sub === 'install') {
         const ref = args.slice(1).join(' ');
         const app = CATALOG.find((c) => ref.toLowerCase().includes(c.id) || ref.toLowerCase().includes(c.name.toLowerCase().replace(/\s/g, '')));
@@ -2508,10 +3444,21 @@ function termStage(seg, input) {
         }
         return { text: `error: No se encontró «${ref}» en Flathub` };
       }
+      if (sub === 'uninstall' || sub === 'remove') {
+        const ref = args.slice(1).join(' ');
+        const app = CATALOG.find((c) => ref.toLowerCase().includes(c.id));
+        if (!app) return { text: `error: ${ref || '(vacío)'} no está instalada` };
+        state.software.installed = state.software.installed.filter((id) => id !== app.id);
+        if (state.open.has('software')) rerenderWindow('software');
+        return { text: `Desinstalando ${app.id}…\nDesinstalación completa.` };
+      }
+      if (sub === 'update') {
+        return { text: 'Buscando actualizaciones…\nNada que actualizar.' };
+      }
       if (sub === 'list') {
         return { text: state.software.installed.map((id) => (swItem(id) || {}).name).filter(Boolean).map((n) => `${n}\tstable`).join('\n') };
       }
-      return { text: 'Uso: flatpak <list|install|remotes> [ref]' };
+      return { text: 'Uso: flatpak <search|install|uninstall|update|list|remotes> [ref]' };
     }
 
     case 'clear':
@@ -3270,10 +4217,10 @@ function viewManual() {
     <p>El Centro de control cambia entre modo claro y oscuro, ajusta el brillo y el volumen y activa Wi-Fi, Bluetooth o No molestar. En <b>Ajustes → Escritorio y Dock</b> puedes cambiar el tamaño del Dock y ocultarlo automáticamente.</p>
 
     <h3>Uso diario</h3>
-    <p><b>Firefox</b> y <b>Thunderbird</b> ya vienen instalados: no hay que descargar nada para navegar o leer el correo. En la barra de Firefox puedes abrir pestañas (+), guardar favoritos con la estrella y consultar el historial. En Thunderbird, el buscador filtra los mensajes al escribir.</p>
+    <p><b>Firefox</b> y <b>Thunderbird</b> ya vienen instalados: no hay que descargar nada para navegar o leer el correo. En esta vista previa, Firefox <b>carga páginas reales</b>: escribe <b>example.com</b> o una búsqueda en la barra de direcciones. Funcionan las pestañas (+), la estrella de favoritos, el historial y atrás/adelante con URLs reales. En Thunderbird, el buscador filtra los mensajes al escribir.</p>
 
     <h3>Centro de software</h3>
-    <p>Abre el <b>Centro de software</b> desde el Dock. Instala, actualiza o quita aplicaciones con la barra de progreso en directo; las que se instalan aparecen también en el menú de aplicaciones. En LiquidOS real el catálogo incluye Debian y Flathub.</p>
+    <p>Abre el <b>Centro de software</b> desde el Dock y busca en el catálogo real de <b>Flathub</b>. Si el equipo donde corre la demo tiene Flatpak, instalar, quitar y actualizar se ejecuta de verdad y verás la salida del comando. Si no lo tiene, la demo te da el comando exacto y el enlace a Flathub; en la ISO de LiquidOS Flatpak y Flathub vienen listos.</p>
 
     <h3>Terminal</h3>
     <p>La terminal funciona de verdad dentro de la demo: prueba <b>ls -la</b>, <b>cd Documentos</b>, <b>cat notas-reunion.md</b>, <b>echo hola &gt; saludo.txt</b>, <b>cat saludo.txt | grep hola</b>, <b>sudo apt install vlc</b> o <b>liquidos doctor</b>. Las flechas recorren el historial, <b>Tab</b> completa comandos y <b>Ctrl + L</b> limpia la pantalla.</p>
@@ -4128,6 +5075,9 @@ function setupBoot() {
   };
 
   requestAnimationFrame(step);
+  // Red de seguridad: en pestañas en segundo plano el navegador puede
+  // pausar requestAnimationFrame y la animación no avanzaría nunca.
+  setTimeout(finish, duration + 1500);
   boot.addEventListener('click', finish);
   window.addEventListener('keydown', function skip(e) {
     if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ') {

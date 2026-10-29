@@ -52,6 +52,29 @@ jobs:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
 
+      - name: Verificar la configuración
+        run: |
+          set -e
+          bash -n build/build-iso.sh
+          bash -n scripts/verificar-uso-diario.sh
+          node --check preview/app.js
+          node --check scripts/preview.mjs
+          for h in build/live-build/config/hooks/normal/*.hook.chroot; do
+            echo "Sintaxis: $h"
+            bash -n "$h"
+          done
+          for f in \
+            build/live-build/config/includes.chroot/usr/local/sbin/liquidos-firstboot \
+            build/live-build/config/includes.chroot/etc/systemd/system/liquidos-firstboot.service \
+            build/live-build/config/includes.chroot/etc/polkit-1/rules.d/49-liquidos-live.rules \
+            build/live-build/config/package-lists/liquidos.list.chroot; do
+            test -s "$f" || { echo "Falta o está vacío: $f"; exit 1; }
+          done
+          grep -q '^packagekit$' build/live-build/config/package-lists/liquidos.list.chroot
+          grep -q 'liquidos-firstboot' build/live-build/config/hooks/normal/0350-liquidos-daily.hook.chroot
+          grep -q 'liquidos-verificar' build/build-iso.sh
+          echo "Configuración verificada"
+
       - name: Liberar espacio en disco
         run: |
           echo "Espacio inicial:"

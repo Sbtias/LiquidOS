@@ -1,0 +1,55 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — preparación del primer arranque
+#   · Añade Flathub al sistema (si hay red)
+#   · Refresca el catálogo de appstream para GNOME Software
+#   · Deja una marca para no repetir el proceso
+# ============================================================
+set -uo pipefail
+
+LOG=/var/log/liquidos-firstboot.log
+mkdir -p /var/log /var/lib/liquidos
+exec >>"$LOG" 2>&1
+
+echo "[$(date -Is)] LiquidOS: preparación del primer arranque"
+
+# Esperar a tener red (máximo 90 s). Si no hay red, se reintenta en
+# el siguiente arranque porque no se crea la marca de finalizado.
+for _ in $(seq 1 30); do
+    if getent hosts dl.flathub.org >/dev/null 2>&1; then
+        break
+    fi
+    sleep 3
+done
+
+if ! getent hosts dl.flathub.org >/dev/null 2>&1; then
+    echo "[$(date -Is)] Sin red: se reintentará en el próximo arranque"
+    exit 0
+fi
+
+if command -v flatpak >/dev/null 2>&1; then
+    # Flathub a nivel de sistema: lo usan todos los usuarios y el
+    # Centro de software lo muestra sin configuración adicional.
+    flatpak remote-add --system --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo \
+        && echo "[$(date -Is)] Flathub disponible" \
+        || echo "[$(date -Is)] aviso: no se pudo añadir Flathub"
+
+    # Refrescar metadatos: sin esto la tienda puede tardar en mostrar
+    # las aplicaciones hasta que el usuario abra la pestaña de Flathub.
+    flatpak --system --noninteractive update --appstream >/dev/null 2>&1 \
+        && echo "[$(date -Is)] Catálogo de Flathub actualizado" \
+        || echo "[$(date -Is)] aviso: no se pudo refrescar appstream"
+else
+    echo "[$(date -Is)] aviso: flatpak no está instalado"
+fi
+
+# Refrescar también el catálogo Debian de PackageKit si está activo.
+if command -v pkcon >/dev/null 2>&1; then
+    pkcon refresh force >/dev/null 2>&1 \
+        && echo "[$(date -Is)] Catálogo Debian actualizado" \
+        || echo "[$(date -Is)] aviso: pkcon refresh no terminó"
+fi
+
+date -Is > /var/lib/liquidos/firstboot.done
+echo "[$(date -Is)] Primer arranque completado"

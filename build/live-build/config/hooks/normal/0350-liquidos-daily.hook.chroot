@@ -88,6 +88,29 @@ UseNetwork=true
 EOF
 
 # ------------------------------------------------------------
+# 2b. Primer arranque: Flathub y catálogo listos sin tocar nada
+# ------------------------------------------------------------
+
+# El script y la unidad vienen en includes.chroot. Nos aseguramos de
+# que el script sea ejecutable (Windows no conserva el bit +x) y de
+# que systemd lo arranque una sola vez.
+if [ -f /usr/local/sbin/liquidos-firstboot ]; then
+    chmod 0755 /usr/local/sbin/liquidos-firstboot
+    mkdir -p /var/lib/liquidos
+    systemctl enable liquidos-firstboot.service >/dev/null 2>&1 \
+        && echo "[LiquidOS] Primer arranque programado" \
+        || echo "[LiquidOS] aviso: no se pudo activar liquidos-firstboot"
+else
+    echo "[LiquidOS] aviso: falta /usr/local/sbin/liquidos-firstboot"
+fi
+
+# Regla de polkit: la sesión live («user») puede instalar sin contraseña.
+if [ -f /etc/polkit-1/rules.d/49-liquidos-live.rules ]; then
+    chmod 0644 /etc/polkit-1/rules.d/49-liquidos-live.rules
+    echo "[LiquidOS] Permisos de instalación de la sesión live listos"
+fi
+
+# ------------------------------------------------------------
 # 3. Comando `liquidos` para la terminal
 # ------------------------------------------------------------
 
@@ -114,6 +137,7 @@ LiquidOS · utilidades del sistema
   liquidos theme [dark|light] Cambiar entre modo oscuro y claro
   liquidos wallpaper <img>   Poner una imagen como fondo
   liquidos doctor            Comprobar el estado del sistema
+  liquidos verificar         Verificación completa de uso diario
   liquidos report            Generar un informe para soporte
 
 Atajos: firefox, thunderbird, nautilus, gnome-terminal, code (si está instalado).
@@ -151,7 +175,23 @@ doctor() {
     command -v firefox-esr >/dev/null && ok "Firefox instalado" || mal "Firefox no encontrado"
     command -v thunderbird >/dev/null && ok "Thunderbird instalado" || mal "Thunderbird no encontrado"
     command -v flatpak >/dev/null && ok "Flatpak disponible" || mal "Flatpak no instalado"
-    flatpak remotes 2>/dev/null | grep -q flathub && ok "Flathub configurado" || mal "Flathub no configurado"
+    flatpak remotes --columns=name 2>/dev/null | grep -qx flathub && ok "Flathub configurado" || mal "Flathub no configurado"
+    command -v gnome-software >/dev/null && ok "Centro de software instalado" || mal "Centro de software no encontrado"
+    if command -v pkcon >/dev/null || [ -x /usr/lib/packagekit/packagekitd ] || [ -x /usr/libexec/packagekitd ]; then
+        ok "PackageKit disponible"
+    else
+        mal "PackageKit no instalado"
+    fi
+    if [ -f /var/lib/liquidos/firstboot.done ]; then
+        ok "Primer arranque preparado"
+    else
+        mal "Primer arranque pendiente (se reintenta al reiniciar)"
+    fi
+    if [ -x /usr/libexec/xdg-desktop-portal ] || command -v xdg-desktop-portal-gtk >/dev/null; then
+        ok "Portales de escritorio disponibles"
+    else
+        mal "Portales de escritorio no encontrados"
+    fi
     command -v pactl >/dev/null && pactl info >/dev/null 2>&1 && ok "Audio funcionando" || mal "Sin servidor de audio"
     command -v nmcli >/dev/null && nmcli -t -f STATE general >/dev/null 2>&1 && ok "NetworkManager activo" || mal "NetworkManager inactivo"
     if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then ok "Conexión a Internet"; else mal "Sin conexión a Internet"; fi
@@ -200,6 +240,12 @@ case "$cmd" in
         gsettings set org.gnome.desktop.background picture-uri-dark "$uri"
         echo "Fondo actualizado: $img" ;;
     doctor) doctor ;;
+    verificar|verificar-uso-diario|check)
+        if [ -x /usr/local/bin/liquidos-verificar ]; then
+            exec /usr/local/bin/liquidos-verificar
+        else
+            echo "No se encontró /usr/local/bin/liquidos-verificar"; exit 1
+        fi ;;
     report|reporte) report ;;
     *) echo "Comando desconocido: $cmd"; echo; ayuda; exit 1 ;;
 esac
