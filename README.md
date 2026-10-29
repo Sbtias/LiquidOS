@@ -36,6 +36,7 @@ de **personalización** con acentos, fondos, posición del Dock y estilo de vent
 | Vista previa interactiva del escritorio (web) | ✅ con `node scripts/preview.mjs` |
 | Navegador real en la vista previa (proxy + iframe aislado) | ✅ |
 | Tienda real en la vista previa (Flathub y Flatpak) | ✅ catálogo real; instala si hay Flatpak |
+| Descargas verificadas (GitHub Releases + registro en Supabase) | ✅ |
 | Árbol de compilación con `live-build` (Debian 12) | ✅ listo |
 | Identidad del sistema (`/etc/os-release`, hostname, shell zsh) | ✅ |
 | Tema macOS: WhiteSur GTK, iconos y cursores | ✅ con respaldo a Adwaita si no hay red |
@@ -118,6 +119,9 @@ reales** y el **Centro de software consulta el catálogo real de Flathub**:
   `flathub` al usuario si aún no existe (`flatpak remote-add --user`). Si no hay Flatpak
   (por ejemplo, en Windows), la demo lo dice claramente y ofrece el comando exacto y el
   enlace a Flathub; la ISO sí lo trae.
+- **Descargas reales**: la página **Firefox → Descargas** consulta el registro público de
+  versiones en **Supabase** (`/api/downloads`), con tamaño, SHA-256, manifiesto y enlace a
+  GitHub Releases. Si aún no hay versiones publicadas, lo dice en lugar de inventarlas.
 - El resto de la demo sigue siendo local y **todos los controles responden**:
 
   - **Dock** con magnificación, indicadores de app abierta y rebote al abrir; iconos de tamaño ajustable.
@@ -145,12 +149,17 @@ Necesitas ~10 GB libres, conexión a internet y 30–60 minutos.
 Si estás en Windows y no tienes Docker ni WSL, deja que compile GitHub:
 
 1. Sube este proyecto a un repositorio de GitHub.
-2. Abre **Actions → «Construir ISO» → Run workflow**.
-3. Espera ~40 minutos y descarga el artefacto **`liquidos-1.0-amd64`**.
+2. *(Opcional, para el registro de descargas)* En **Settings → Secrets and variables →
+   Actions**, crea `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`. Así cada compilación se
+   registra en Supabase y aparece en **Firefox → Descargas** de la vista previa.
+   Sin esos secretos la ISO se construye igual.
+3. Abre **Actions → «Construir ISO» → Run workflow**.
+4. Espera ~40 minutos y descarga el artefacto **`liquidos-1.0-amd64`**.
    Contiene `LiquidOS-1.0-amd64.iso` y su `.sha256`.
-4. Monta la ISO en VirtualBox/VMware/QEMU y arranca.
+5. Monta la ISO en VirtualBox/VMware/QEMU y arranca.
 
-El flujo también se dispara al publicar una *release* y adjunta la ISO automáticamente.
+El flujo también se dispara al publicar una *release* (`v1.0`) y adjunta la ISO
+automáticamente; en ese caso el registro apunta directamente al asset de la release.
 Archivo: `.github/workflows/build-iso.yml`.
 
 ### En tu equipo
@@ -205,6 +214,25 @@ el servicio `liquidos-firstboot` lo prepara en segundo plano.
 
 ---
 
+## Descargas y verificación
+
+Las ISO se publican en **[GitHub Releases](https://github.com/Sbtias/LiquidOS/releases)**.
+Cada versión se registra además en Supabase (tabla pública `liquidos_releases`) con su
+tamaño y SHA-256, y el manifiesto se sirve desde el bucket público `liquidos`.
+
+```bash
+sha256sum -c LiquidOS-1.0-amd64.iso.sha256
+```
+
+En Windows: `Get-FileHash .\LiquidOS-1.0-amd64.iso -Algorithm SHA256`.
+
+Supabase no aloja la ISO: el plan actual limita cada objeto a 50 MB y una ISO ronda los
+2–3 GB. El binario vive en la release y Supabase guarda el registro que consume la vista
+previa. El flujo completo, los secretos y el mantenimiento están en
+[`docs/DESCARGAS.md`](docs/DESCARGAS.md).
+
+---
+
 ## Probar el aspecto sin compilar la ISO
 
 ¿Tienes un Debian o Ubuntu con GNOME? Aplica la capa visual en un minuto:
@@ -237,7 +265,7 @@ LiquidOS/
 │       ├── includes.chroot/  Ficheros del sistema (dconf, Plymouth, GRUB…)
 │       └── bootloaders/      Menú de arranque
 ├── desktop/apps/             Aplicaciones propias (bienvenida)
-├── docs/                     Arquitectura, compilación, capturas y hoja de ruta
+├── docs/                     Arquitectura, compilación, descargas, capturas y hoja de ruta
 ├── preview/                  Escritorio de demostración (web)
 ├── scripts/                  Servidor de la vista previa, tema y verificación en la VM
 └── Makefile                  Atajos: preview, iso, native, look, clean

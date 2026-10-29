@@ -47,6 +47,9 @@ jobs:
       DEBIAN_FRONTEND: noninteractive
       LIQUIDOS_VERSION: ${{ inputs.version || '1.0' }}
       LIQUIDOS_ARCH: ${{ inputs.arch || 'amd64' }}
+      # Si defines el secreto SUPABASE_URL, la ISO también se registra en
+      # Supabase para que la vista previa muestre la descarga real.
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
 
     steps:
       - name: Descargar el repositorio
@@ -57,6 +60,7 @@ jobs:
           set -e
           bash -n build/build-iso.sh
           bash -n scripts/verificar-uso-diario.sh
+          bash -n scripts/publicar-descarga.sh
           node --check preview/app.js
           node --check scripts/preview.mjs
           for h in build/live-build/config/hooks/normal/*.hook.chroot; do
@@ -105,6 +109,44 @@ jobs:
         run: |
           ls -lh dist/
           cat dist/*.sha256
+
+      - name: Publicar la descarga en Supabase
+        id: publicar
+        # Solo si el repositorio tiene configurado SUPABASE_URL.
+        if: ${{ env.SUPABASE_URL != '' }}
+        continue-on-error: true
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          iso=$(find dist -maxdepth 1 -name '*.iso' -print -quit)
+          [ -n "$iso" ] || { echo "No se encontró ninguna ISO en dist/"; exit 1; }
+          source="artifact"
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          download_url="$run_url"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            source="release"
+            download_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$iso")"
+          fi
+          args=(
+            "$iso"
+            --version "$LIQUIDOS_VERSION"
+            --arch "$LIQUIDOS_ARCH"
+            --source "$source"
+            --run-url "$run_url"
+          )
+          if [[ -n "$download_url" ]]; then
+            args+=(--download-url "$download_url")
+          fi
+          bash scripts/publicar-descarga.sh "${args[@]}"
+          {
+            echo "### Descarga registrada"
+            echo ""
+            echo "- Versión: \`${LIQUIDOS_VERSION}\`"
+            echo "- Binario: $download_url"
+            echo "- Registro: Supabase · \`public.liquidos_releases\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publicar la ISO como artefacto
         uses: actions/upload-artifact@v4

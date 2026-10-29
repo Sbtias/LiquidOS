@@ -119,7 +119,7 @@ Este hook prepara la distro para no tener que configurar nada al arrancar:
 
 La vista previa web reproduce estas mismas funciones en `preview/app.js` (Centro de software,
 shell virtual y panel de personalización) para poder probarlas sin compilar la ISO. Además,
-`scripts/preview.mjs` expone dos APIs locales:
+`scripts/preview.mjs` expone tres APIs locales:
 
 - `/api/web`: descarga páginas reales, elimina scripts, iframes y manejadores inline, añade
   una base y un puente de navegación, y bloquea destinos privados (SSRF). El iframe se
@@ -127,8 +127,27 @@ shell virtual y panel de personalización) para poder probarlas sin compilar la 
 - `/api/store/*`: consulta la API real de Flathub (catálogo e iconos) y, si el equipo tiene
   Flatpak, lanza `flatpak install/update/uninstall` como trabajos en segundo plano con su
   salida. Sin Flatpak responde con el comando exacto en lugar de fingir una instalación.
+- `/api/downloads`: lee `public.liquidos_releases` en Supabase con la clave publicable
+  (solo lectura, cacheada 60 s) y devuelve las versiones con su SHA-256 y enlaces.
 
 La demo no forma parte de la ISO; es una herramienta de diseño y prueba.
+
+### 3.10 Descargas (`scripts/publicar-descarga.sh` + Supabase)
+
+El binario y los metadatos viven separados a propósito:
+
+- **GitHub Releases** aloja la ISO. No tiene el límite de 50 MB por objeto del plan actual
+  de Supabase y su CDN evita gastar transferencia del proyecto.
+- **Supabase** guarda el registro público (`public.liquidos_releases`) y los manifiestos
+  pequeños en el bucket `liquidos`: `releases/<canal>/<versión>.json` y `SHA256SUMS`.
+- **GitHub Actions** publica después de compilar. Con una etiqueta `v*`, el enlace apunta al
+  asset de la release; en compilaciones manuales, al run de Actions (`source = artifact`).
+- La escritura usa la clave `service_role`, solo disponible como secreto de CI. La lectura
+  anónima está limitada por RLS a `select`; no hay políticas de escritura públicas.
+- La vista previa no inventa versiones: si el registro está vacío o Supabase falla, muestra
+  el estado real y el enlace a GitHub Releases.
+
+Detalle operativo y límites: [`DESCARGAS.md`](DESCARGAS.md).
 
 ## 4. Decisiones y alternativas descartadas
 
@@ -163,3 +182,6 @@ La demo no forma parte de la ISO; es una herramienta de diseño y prueba.
 5. Secure Boot usa el shim firmado de Debian, no uno propio.
 6. El Centro de software necesita red la primera vez que se usa Flathub; la ISO se compila sin
    descargar aplicaciones Flatpak para no crecer de más.
+7. La ISO no cabe en Supabase Storage con el límite actual (50 MB por objeto): el registro
+   está en Supabase y el binario en GitHub Releases. Con un plan superior se puede activar
+   `--upload-iso` sin cambiar la tabla.

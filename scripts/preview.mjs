@@ -4,6 +4,7 @@
 //   · Sirve la demo (preview/)
 //   · /api/web        navegador real: descarga y sanea páginas
 //   · /api/store/*    tienda real: catálogo Flathub y Flatpak
+//   · /api/downloads  versiones publicadas en Supabase
 //
 // Solo escucha en 127.0.0.1. Uso: node scripts/preview.mjs [puerto]
 // ============================================================
@@ -650,6 +651,101 @@ function mapCategory(value) {
 }
 
 /* ============================================================
+ * Descargas reales: registro público en Supabase
+ *
+ * Solo se lee la tabla public.liquidos_releases con la clave
+ * publicable (segura de exponer). La escritura la hace únicamente
+ * scripts/publicar-descarga.sh con la clave de servicio en CI.
+ * ============================================================ */
+
+const SUPABASE_URL = (
+  process.env.LIQUIDOS_SUPABASE_URL || 'https://noeankaxfyqvgtkrulno.supabase.co'
+).replace(/\/+$/, '');
+
+const SUPABASE_KEY =
+  process.env.LIQUIDOS_SUPABASE_ANON_KEY ||
+  'sb_publishable_Z7xSrzPPt4ECu7kywl_cmg_K-6yrdDT';
+
+const downloadsCache = { at: 0, data: null };
+
+function cleanUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return /^https?:$/.test(url.protocol) ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function releaseJson(row) {
+  const channel = String(row.channel || 'stable').replace(/[^A-Za-z0-9._-]/g, '');
+  const version = String(row.version || '').replace(/[^A-Za-z0-9._-]/g, '');
+  return {
+    version: String(row.version || ''),
+    channel: String(row.channel || 'stable'),
+    name: String(row.iso_name || ''),
+    size: Number(row.size_bytes) || 0,
+    sha256: String(row.sha256 || ''),
+    downloadUrl: cleanUrl(row.download_url),
+    source: String(row.source || 'release'),
+    runUrl: cleanUrl(row.run_url),
+    notes: String(row.notes || ''),
+    current: Boolean(row.is_current),
+    createdAt: String(row.created_at || ''),
+    manifestUrl: version
+      ? `${SUPABASE_URL}/storage/v1/object/public/liquidos/releases/${encodeURIComponent(channel)}/${encodeURIComponent(version)}.json`
+      : ''
+  };
+}
+
+async function fetchDownloads() {
+  if (downloadsCache.data && Date.now() - downloadsCache.at < 60 * 1000) {
+    return { ...downloadsCache.data, cached: true };
+  }
+
+  const select = [
+    'version', 'channel', 'iso_name', 'size_bytes', 'sha256',
+    'download_url', 'source', 'run_url', 'notes', 'is_current', 'created_at'
+  ].join(',');
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/liquidos_releases?select=${select}` +
+        '&order=is_current.desc,created_at.desc&limit=20',
+      {
+        signal: ctrl.signal,
+        headers: {
+          apikey: SUPABASE_KEY,
+          authorization: `Bearer ${SUPABASE_KEY}`,
+          accept: 'application/json',
+          'user-agent': UA
+        }
+      }
+    );
+    if (!res.ok) throw new Error(`Supabase respondió HTTP ${res.status}`);
+    const rows = await res.json();
+    const data = {
+      ok: true,
+      configured: true,
+      releases: Array.isArray(rows) ? rows.map(releaseJson) : []
+    };
+    downloadsCache.at = Date.now();
+    downloadsCache.data = data;
+    return data;
+  } catch (err) {
+    const message =
+      err.name === 'AbortError'
+        ? 'Supabase tardó demasiado en responder'
+        : `No se pudo consultar Supabase: ${err.message}`;
+    return { ok: false, configured: true, error: message, releases: [] };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ============================================================
  * Rutas
  * ============================================================ */
 
@@ -675,6 +771,11 @@ async function handleApi(req, res, url) {
       node: process.version,
       platform: process.platform
     });
+  }
+
+  /* ---------------------- Descargas reales ---------------------- */
+  if (path === '/api/downloads') {
+    return json(res, 200, await fetchDownloads());
   }
 
   /* ---------------------- Navegador real ---------------------- */
@@ -874,7 +975,7 @@ const server = createServer(async (req, res) => {
 server.listen(port, '127.0.0.1', () => {
   detectFlatpak(true);
   console.log(`LiquidOS · vista previa en http://127.0.0.1:${port}`);
-  console.log(`  navegador real: /api/web · tienda: /api/store/status`);
+  console.log(`  navegador real: /api/web · tienda: /api/store/status · descargas: /api/downloads`);
   console.log(
     store.available
       ? `  flatpak detectado: ${store.version}${store.flathub ? ' · Flathub listo' : ' · Flathub pendiente'}`

@@ -290,6 +290,12 @@ const state = {
     notice: null,
     searchTimer: null
   },
+  downloads: {
+    releases: [],
+    loading: false,
+    error: '',
+    at: 0
+  },
   web: {
     pages: {},
     loading: {},
@@ -1118,6 +1124,74 @@ function webStateHtml(entry) {
   return `<div class="web-spinner"></div><p>Conectando con <b>${escapeHtml(webHost(entry))}</b>…</p>`;
 }
 
+/* ------------------------- Descargas ------------------------- */
+
+function formatBytes(n) {
+  const size = Number(n) || 0;
+  if (!size) return 'tamaño pendiente';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = size;
+  let i = 0;
+  while (value >= 1024 && i < units.length - 1) { value /= 1024; i++; }
+  return `${value.toLocaleString('es-ES', { maximumFractionDigits: i ? 1 : 0 })} ${units[i]}`;
+}
+
+function downloadRowHtml(r) {
+  const date = r.createdAt ? new Date(r.createdAt) : null;
+  const when = date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+  const name = r.name || `LiquidOS-${r.version}-amd64.iso`;
+  const badge = r.current
+    ? '<span class="dl-badge on">actual</span>'
+    : `<span class="dl-badge">${escapeHtml(r.channel)}</span>`;
+  return `
+  <div class="dl-row">
+    <span class="mini app-icon" style="--c1:#b8c6db;--c2:#7d8ba1">${icons('download')}</span>
+    <span class="dl-info">
+      <b>${escapeHtml(name)} ${badge}</b>
+      <small>${escapeHtml(r.version)} · ${escapeHtml(r.channel)} · ${formatBytes(r.size)}${when ? ` · ${escapeHtml(when)}` : ''}</small>
+      ${r.sha256 ? `<code title="${escapeHtml(r.sha256)}">${escapeHtml(r.sha256.slice(0, 16))}…</code>` : ''}
+    </span>
+    <span class="dl-actions">
+      ${r.downloadUrl ? `<a class="btn primary" href="${escapeHtml(r.downloadUrl)}" target="_blank" rel="noopener">Descargar</a>` : ''}
+      ${r.sha256 ? `<button class="btn" data-copy-sha="${escapeHtml(r.sha256)}">Copiar suma</button>` : ''}
+      ${r.manifestUrl ? `<a class="btn" href="${escapeHtml(r.manifestUrl)}" target="_blank" rel="noopener">Manifiesto</a>` : ''}
+      ${r.runUrl ? `<a class="btn" href="${escapeHtml(r.runUrl)}" target="_blank" rel="noopener">Run</a>` : ''}
+    </span>
+  </div>`;
+}
+
+async function loadDownloads(force = false) {
+  const d = state.downloads;
+  if (d.loading) return;
+  if (!force && d.at && Date.now() - d.at < 60 * 1000) return;
+  d.loading = true;
+  d.error = '';
+  if (state.open.has('navegador')) rerenderWindow('navegador');
+  try {
+    const data = await api('/api/downloads');
+    d.releases = Array.isArray(data.releases) ? data.releases.slice(0, 20) : [];
+    d.error = data.ok ? '' : (data.error || 'No se pudo consultar el registro de versiones.');
+  } catch (err) {
+    d.releases = [];
+    d.error = err.message || 'No se pudo contactar con el servidor de la vista previa.';
+  } finally {
+    d.loading = false;
+    d.at = Date.now();
+    if (state.open.has('navegador')) rerenderWindow('navegador');
+  }
+}
+
+async function copyText(text, okMessage) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(okMessage);
+  } catch {
+    toast(text, 6000);
+  }
+}
+
 function browserPageHtml(id, b) {
   if (isWebEntry(id)) {
     return `
@@ -1193,13 +1267,27 @@ function browserPageHtml(id, b) {
   }
 
   if (id === 'descargas') {
+    const d = state.downloads;
+    const rows = d.releases || [];
+    const loading = d.loading && !rows.length;
     return `
     <div class="page">
-      <h2>Descargas</h2>
-      <p class="lead">Archivos disponibles en este equipo.</p>
-      <button class="list-row" data-dl="LiquidOS-1.0-amd64.iso"><span class="mini app-icon" style="--c1:#b8c6db;--c2:#7d8ba1">${icons('doc')}</span><span><b>LiquidOS-1.0-amd64.iso</b><small>Imagen híbrida BIOS + UEFI</small></span><span class="meta">2,4 GB</span></button>
-      <button class="list-row" data-dl="liquidos-1.0-amd64.iso.sha256"><span class="mini app-icon" style="--c1:#c9d1e0;--c2:#7d8798">${icons('doc')}</span><span><b>liquidos-1.0-amd64.iso.sha256</b><small>Suma de verificación</small></span><span class="meta">96 B</span></button>
-      <button class="list-row" data-dl="build.log"><span class="mini app-icon" style="--c1:#c9d1e0;--c2:#7d8798">${icons('doc')}</span><span><b>build.log</b><small>Registro de compilación</small></span><span class="meta">312 KB</span></button>
+      <div class="page-head">
+        <div>
+          <h2>Descargas</h2>
+          <p class="lead">Versiones publicadas de LiquidOS. El registro vive en Supabase y el binario en GitHub Releases.</p>
+        </div>
+        <button class="btn" data-dl-refresh ${d.loading ? 'disabled' : ''}>${d.loading ? 'Consultando…' : 'Actualizar'}</button>
+      </div>
+      ${d.error ? `<div class="dl-note warn"><b>No se pudo consultar el registro</b><span>${escapeHtml(d.error)}</span></div>` : ''}
+      ${loading ? `<div class="dl-loading"><span class="web-spinner"></span><span>Consultando Supabase…</span></div>` : ''}
+      ${rows.length ? `<div class="dl-list">${rows.map(downloadRowHtml).join('')}</div>` : ''}
+      ${!loading && !rows.length ? `<div class="finder-empty">${d.error ? 'Mientras tanto puedes bajar la última versión desde GitHub Releases.' : 'Todavía no hay versiones registradas. La primera ISO aparecerá aquí al publicarla.'}</div>` : ''}
+      <div class="dl-note"><b>Verifica siempre la descarga</b><span>Compara el SHA-256 con el manifiesto: <code>sha256sum LiquidOS-*.iso</code>.</span></div>
+      <div class="dl-links">
+        <a class="btn" href="https://github.com/Sbtias/LiquidOS/releases" target="_blank" rel="noopener">GitHub Releases</a>
+        <a class="btn" href="https://github.com/Sbtias/LiquidOS" target="_blank" rel="noopener">Código fuente</a>
+      </div>
     </div>`;
   }
 
@@ -1264,6 +1352,7 @@ function browserGo(id) {
   if (tab.stack[tab.index] === id) {
     rerenderWindow('navegador');
     if (isWebEntry(id)) ensureWebPage(id);
+    if (id === 'descargas') loadDownloads();
     return;
   }
   tab.stack = tab.stack.slice(0, tab.index + 1);
@@ -1273,6 +1362,7 @@ function browserGo(id) {
   b.history = [id, ...b.history.filter((h) => h !== id)].slice(0, 30);
   rerenderWindow('navegador');
   if (isWebEntry(id)) ensureWebPage(id);
+  if (id === 'descargas') loadDownloads();
 }
 
 function browserNewTab() {
@@ -1475,9 +1565,14 @@ function wireBrowser(win) {
     });
   }
 
-  $$('[data-dl]', body).forEach((btn) => {
-    btn.addEventListener('click', () => toast(`«${btn.dataset.dl}» · descarga simulada`));
+  const dlRefresh = $('[data-dl-refresh]', body);
+  if (dlRefresh) dlRefresh.addEventListener('click', () => loadDownloads(true));
+
+  $$('[data-copy-sha]', body).forEach((btn) => {
+    btn.addEventListener('click', () => copyText(btn.dataset.copySha, 'SHA-256 copiado al portapapeles'));
   });
+
+  if (tab.stack[tab.index] === 'descargas' && !state.downloads.at) loadDownloads();
 
   const frame = $('[data-web-frame]', body);
   if (frame) {

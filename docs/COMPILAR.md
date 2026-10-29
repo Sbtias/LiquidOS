@@ -39,6 +39,12 @@ ocupar 15 GB de disco. GitHub compila por ti y te da la ISO como artefacto.
 4. Opcional: al publicar una *release* o un tag `v1.0`, la ISO se adjunta
    automáticamente a la release.
 
+5. Opcional: para que la versión aparezca en **Firefox → Descargas** de la
+   vista previa, añade los secretos `SUPABASE_URL` y
+   `SUPABASE_SERVICE_ROLE_KEY` en **Settings → Secrets and variables →
+   Actions**. Sin ellos la ISO se construye igual. Detalles en
+   [`DESCARGAS.md`](DESCARGAS.md).
+
 El flujo está en `.github/workflows/build-iso.yml` y usa `ubuntu-24.04`
 con `live-build`, `debootstrap`, GRUB BIOS+UEFI y `zstd`.
 
