@@ -1,5 +1,8 @@
 # LiquidOS
 
+[![Construir ISO](https://github.com/Sbtias/LiquidOS/actions/workflows/build-iso.yml/badge.svg)](https://github.com/Sbtias/LiquidOS/actions/workflows/build-iso.yml)
+[![Última versión](https://img.shields.io/github/v/release/Sbtias/LiquidOS?include_prereleases&label=descarga)](https://github.com/Sbtias/LiquidOS/releases)
+
 **Una distribución de Linux basada en Debian 12 con un escritorio cuidado al detalle, inspirado en macOS.**
 
 LiquidOS no es un clon de macOS: es una distribución real (kernel Linux, paquetes Debian, GNOME),
@@ -148,7 +151,7 @@ Necesitas ~10 GB libres, conexión a internet y 30–60 minutos.
 
 Si estás en Windows y no tienes Docker ni WSL, deja que compile GitHub:
 
-1. Sube este proyecto a un repositorio de GitHub.
+1. Usa este repositorio (o tu propio fork): <https://github.com/Sbtias/LiquidOS>.
 2. *(Opcional, para el registro de descargas)* En **Settings → Secrets and variables →
    Actions**, crea `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`. Así cada compilación se
    registra en Supabase y aparece en **Firefox → Descargas** de la vista previa.

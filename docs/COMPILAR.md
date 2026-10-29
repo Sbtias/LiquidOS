@@ -19,16 +19,14 @@ La ISO final ronda los **2,2–2,8 GB**.
 Ideal si estás en Windows y no tienes Docker ni WSL, o si no quieres
 ocupar 15 GB de disco. GitHub compila por ti y te da la ISO como artefacto.
 
-1. Crea un repositorio y sube el proyecto:
+1. Usa el repositorio oficial o tu fork:
 
    ```bash
-   git init
-   git add .
-   git commit -m "LiquidOS 1.0"
-   git branch -M main
-   git remote add origin https://github.com/TU-USUARIO/LiquidOS.git
-   git push -u origin main
+   git clone https://github.com/Sbtias/LiquidOS.git
+   cd LiquidOS
    ```
+
+   Si trabajas en tu propia copia, cambia el remoto por el de tu repositorio.
 
 2. En GitHub: **Actions → «Construir ISO» → Run workflow**.
    Puedes indicar otra versión (`1.1`, `2.0`…) en el formulario.
