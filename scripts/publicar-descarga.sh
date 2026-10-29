@@ -34,8 +34,12 @@ CHANNEL="${LIQUIDOS_CHANNEL:-stable}"
 BUCKET="${LIQUIDOS_BUCKET:-liquidos}"
 REPO="${GITHUB_REPOSITORY:-Sbtias/LiquidOS}"
 SOURCE="${LIQUIDOS_SOURCE:-release}"
+SOURCE_SET=0
+[ -n "${LIQUIDOS_SOURCE:-}" ] && SOURCE_SET=1
 RUN_URL="${LIQUIDOS_RUN_URL:-}"
 DOWNLOAD_URL="${LIQUIDOS_DOWNLOAD_URL:-}"
+DOWNLOAD_URL_SET=0
+[ -n "$DOWNLOAD_URL" ] && DOWNLOAD_URL_SET=1
 MAX_BYTES="${LIQUIDOS_SUPABASE_MAX_BYTES:-52428800}"
 
 ISO=""
@@ -75,9 +79,9 @@ while [ $# -gt 0 ]; do
     --arch) ARCH="${2:-}"; shift 2 ;;
     --channel) CHANNEL="${2:-}"; shift 2 ;;
     --notes) NOTES_FILE="${2:-}"; shift 2 ;;
-    --source) SOURCE="${2:-}"; shift 2 ;;
+    --source) SOURCE="${2:-}"; SOURCE_SET=1; shift 2 ;;
     --run-url) RUN_URL="${2:-}"; shift 2 ;;
-    --download-url) DOWNLOAD_URL="${2:-}"; shift 2 ;;
+    --download-url) DOWNLOAD_URL="${2:-}"; DOWNLOAD_URL_SET=1; shift 2 ;;
     --bucket) BUCKET="${2:-}"; shift 2 ;;
     --repo) REPO="${2:-}"; shift 2 ;;
     --upload-iso) UPLOAD_ISO=1; shift ;;
@@ -105,6 +109,10 @@ SUPABASE_URL="${SUPABASE_URL%/}"
 [[ "$CHANNEL" =~ ^[A-Za-z0-9._-]+$ ]] || fail "canal no válido: $CHANNEL"
 [[ "$ARCH" =~ ^[A-Za-z0-9._-]+$ ]] || fail "arquitectura no válida: $ARCH"
 [[ "$BUCKET" =~ ^[a-z0-9-]+$ ]] || fail "bucket no válido: $BUCKET"
+case "$SOURCE" in
+  release|artifact|storage) ;;
+  *) fail "origen no válido: $SOURCE (release, artifact o storage)" ;;
+esac
 
 require_key() {
   [ -n "$SUPABASE_URL" ] || fail "falta SUPABASE_URL"
@@ -190,6 +198,10 @@ storage_json="null"
 if [ "$UPLOAD_ISO" -eq 1 ] && [ -n "$ISO" ] && [ -n "$SIZE" ]; then
   if [ "$SIZE" -le "$MAX_BYTES" ]; then
     storage_json="$(json_string "releases/$CHANNEL/$VERSION/$ISO_NAME")"
+    if [ "$DOWNLOAD_URL_SET" -eq 0 ]; then
+      DOWNLOAD_URL="$SUPABASE_URL/storage/v1/object/public/$BUCKET/releases/$CHANNEL/$VERSION/$ISO_NAME"
+    fi
+    [ "$SOURCE_SET" -eq 1 ] || SOURCE="storage"
   else
     log "La ISO pesa $SIZE bytes y el límite es $MAX_BYTES: se enlaza fuera de Supabase"
   fi
