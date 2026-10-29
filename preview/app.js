@@ -45,7 +45,13 @@ const GLYPHS = {
   bell: '<path d="M6 16V10a6 6 0 0 1 12 0v6l2 2H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.7"/>',
   plus: '<path d="M12 5.4v13.2M5.4 12h13.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
   power: '<path d="M12 3.6v8M7.2 6.4a7 7 0 1 0 9.6 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  grid: '<rect x="4" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/>'
+  grid: '<rect x="4" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="4" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13.6" y="13.6" width="6.4" height="6.4" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  firefox: '<circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M15.8 6.4c-3.7-.7-7 1.4-7.8 4.4-.7 2.5.6 4.6 2.7 5.4 2.3.9 4.8-.3 5.6-2.4.7-1.9-.2-3.7-1.9-4.4-1.7-.6-3.4.2-4 1.7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  bird: '<path d="M4.2 16.2c3.2-1 4.8-3.6 5.2-6.9.2-1.7 1.5-3 3.2-3 1.9 0 3.4 1.5 3.4 3.4 0 .7-.2 1.3-.5 1.8 1.7.2 3 1.3 3.5 2.7-2.1.4-3.8 1.5-5 3.2-1.3 1.8-3.2 2.8-5.4 2.8-1.7 0-3.3-.6-4.4-1.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>',
+  store: '<path d="M5 8.4h14l-1 11.2a2 2 0 0 1-2 1.8H8a2 2 0 0 1-2-1.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.6 8.4V6.6a3.4 3.4 0 0 1 6.8 0v1.8" fill="none" stroke="currentColor" stroke-width="1.7"/>',
+  palette: '<path d="M12 3.4a8.6 8.6 0 1 0 0 17.2c1.4 0 2-1 2-1.9 0-.6-.3-1.1-.3-1.7 0-1 .8-1.7 1.8-1.7h1.6a3.5 3.5 0 0 0 3.5-3.5c0-4.4-3.9-8.4-8.6-8.4z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.6" cy="9.2" r="1.1" fill="currentColor"/><circle cx="12.4" cy="7.4" r="1.1" fill="currentColor"/><circle cx="16" cy="9.6" r="1.1" fill="currentColor"/>',
+  info: '<circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 10.6v6M12 7.4v.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+  downloadCloud: '<path d="M7.4 17.6h9.2a3.6 3.6 0 0 0 .4-7.2 5 5 0 0 0-9.6-1.2 3.8 3.8 0 0 0 0 8.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10.4v5.2M9.8 13.4 12 15.6l2.2-2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
 };
 
 const svg = (name, extra = '') =>
@@ -57,12 +63,13 @@ const icons = (name) => svg(name);
 
 const APPS = [
   { id: 'archivos',  name: 'Archivos',  glyph: 'folder',   c1: '#6fc0ff', c2: '#1a6fe0', w: 830, h: 520 },
-  { id: 'navegador', name: 'Navegador', glyph: 'globe',    c1: '#63e6dd', c2: '#0b8f96', w: 880, h: 560 },
-  { id: 'correo',    name: 'Correo',    glyph: 'mail',     c1: '#8ec5ff', c2: '#2b6fe8', w: 760, h: 500 },
+  { id: 'navegador', name: 'Firefox',   glyph: 'firefox',  c1: '#ff9d5c', c2: '#cf3316', w: 920, h: 600 },
+  { id: 'correo',    name: 'Thunderbird', glyph: 'bird',   c1: '#7fc4ff', c2: '#17509f', w: 800, h: 520 },
+  { id: 'software',  name: 'Centro de software', glyph: 'store', c1: '#8fd4ff', c2: '#3b6fd8', w: 880, h: 580 },
   { id: 'notas',     name: 'Notas',     glyph: 'notes',    c1: '#ffe27a', c2: '#f0a51e', w: 720, h: 470 },
   { id: 'musica',    name: 'Música',    glyph: 'music',    c1: '#ff8fb1', c2: '#c2185b', w: 680, h: 470 },
-  { id: 'terminal',  name: 'Terminal',  glyph: 'terminal', c1: '#4b5262', c2: '#171a22', w: 700, h: 430 },
-  { id: 'ajustes',   name: 'Ajustes',   glyph: 'settings', c1: '#c9d1e0', c2: '#7d8798', w: 780, h: 560 }
+  { id: 'terminal',  name: 'Terminal',  glyph: 'terminal', c1: '#4b5262', c2: '#171a22', w: 720, h: 450 },
+  { id: 'ajustes',   name: 'Ajustes',   glyph: 'settings', c1: '#c9d1e0', c2: '#7d8798', w: 800, h: 580 }
 ];
 
 const byId = Object.fromEntries(APPS.map((a) => [a.id, a]));
@@ -194,7 +201,53 @@ const MAILBOXES = {
   ]
 };
 
-/* ---------------------------- Estado ---------------------------- */
+/* ------------------------ Personalización ------------------------ */
+
+const WALLS = [
+  { id: 'torrente', name: 'Torrente' },
+  { id: 'aurora', name: 'Aurora' },
+  { id: 'oceano', name: 'Océano' },
+  { id: 'bosque', name: 'Bosque' },
+  { id: 'atardecer', name: 'Atardecer' },
+  { id: 'grafito', name: 'Grafito' }
+];
+
+const ACCENTS = [
+  { id: 'azul', name: 'Azul', color: '#5aa9ff' },
+  { id: 'purpura', name: 'Púrpura', color: '#a78bfa' },
+  { id: 'rosa', name: 'Rosa', color: '#ff8fb1' },
+  { id: 'rojo', name: 'Rojo', color: '#ff6b6b' },
+  { id: 'naranja', name: 'Naranja', color: '#ffa657' },
+  { id: 'verde', name: 'Verde', color: '#4ade80' },
+  { id: 'turquesa', name: 'Turquesa', color: '#2fd1c5' },
+  { id: 'grafito', name: 'Grafito', color: '#9aa6bd' }
+];
+
+/* ---------------------- Centro de software ---------------------- */
+
+const CATALOG = [
+  { id: 'firefox', name: 'Firefox', summary: 'Navegador web rápido y privado', cat: 'Internet', size: '78 MB', rating: 4.8, glyph: 'firefox', c1: '#ff9d5c', c2: '#cf3316', app: 'navegador', core: true },
+  { id: 'thunderbird', name: 'Thunderbird', summary: 'Correo, calendario y contactos', cat: 'Internet', size: '64 MB', rating: 4.6, glyph: 'bird', c1: '#7fc4ff', c2: '#17509f', app: 'correo', core: true },
+  { id: 'terminal', name: 'Terminal', summary: 'Consola del sistema con zsh', cat: 'Sistema', size: '12 MB', rating: 4.7, glyph: 'terminal', c1: '#4b5262', c2: '#171a22', app: 'terminal', core: true },
+  { id: 'vlc', name: 'VLC', summary: 'Reproduce cualquier vídeo o audio', cat: 'Multimedia', size: '112 MB', rating: 4.7, glyph: 'play', c1: '#ffb347', c2: '#e05a00' },
+  { id: 'gimp', name: 'GIMP', summary: 'Edición de imágenes profesional', cat: 'Diseño', size: '148 MB', rating: 4.5, glyph: 'image', c1: '#a7a7a7', c2: '#4b4b4b' },
+  { id: 'libreoffice', name: 'LibreOffice', summary: 'Documentos, hojas de cálculo y más', cat: 'Productividad', size: '320 MB', rating: 4.4, glyph: 'doc', c1: '#9ad0ff', c2: '#2f6fb8' },
+  { id: 'obs', name: 'OBS Studio', summary: 'Grabación y transmisión en directo', cat: 'Multimedia', size: '190 MB', rating: 4.6, glyph: 'desktop', c1: '#8f9bb3', c2: '#2b3346' },
+  { id: 'spotify', name: 'Spotify', summary: 'Música en streaming', cat: 'Multimedia', size: '210 MB', rating: 4.3, glyph: 'music', c1: '#63e6a8', c2: '#0f7a4a' },
+  { id: 'telegram', name: 'Telegram', summary: 'Mensajería instantánea', cat: 'Internet', size: '86 MB', rating: 4.5, glyph: 'send', c1: '#7cd4ff', c2: '#1f7fc4' },
+  { id: 'discord', name: 'Discord', summary: 'Chat de voz y comunidades', cat: 'Internet', size: '165 MB', rating: 4.2, glyph: 'grid', c1: '#9aa6ff', c2: '#4752c4' },
+  { id: 'vscode', name: 'Visual Studio Code', summary: 'Editor de código con extensiones', cat: 'Desarrollo', size: '310 MB', rating: 4.7, glyph: 'terminal', c1: '#6fb8ff', c2: '#1e5f9e' },
+  { id: 'blender', name: 'Blender', summary: 'Modelado 3D, animación y render', cat: 'Diseño', size: '480 MB', rating: 4.8, glyph: 'grid', c1: '#ffb27a', c2: '#d4611c' },
+  { id: 'krita', name: 'Krita', summary: 'Pintura digital e ilustración', cat: 'Diseño', size: '260 MB', rating: 4.6, glyph: 'palette', c1: '#ff9ec4', c2: '#a3175c' },
+  { id: 'inkscape', name: 'Inkscape', summary: 'Diseño vectorial y SVG', cat: 'Diseño', size: '180 MB', rating: 4.4, glyph: 'tag', c1: '#b8c6db', c2: '#5b6a83' },
+  { id: 'transmission', name: 'Transmission', summary: 'Descargas BitTorrent ligeras', cat: 'Internet', size: '18 MB', rating: 4.3, glyph: 'download', c1: '#ff8f8f', c2: '#b62b2b' },
+  { id: 'keepassxc', name: 'KeePassXC', summary: 'Gestor de contraseñas local', cat: 'Utilidades', size: '62 MB', rating: 4.7, glyph: 'lock', c1: '#9ad0a0', c2: '#2f7a45' },
+  { id: 'steam', name: 'Steam', summary: 'Tienda y biblioteca de juegos', cat: 'Juegos', size: '420 MB', rating: 4.1, glyph: 'grid', c1: '#88a9d8', c2: '#1b3b5f' },
+  { id: 'calculator', name: 'Calculadora', summary: 'Cálculos rápidos y conversiones', cat: 'Utilidades', size: '6 MB', rating: 4.2, glyph: 'plus', c1: '#c9d1e0', c2: '#7d8798' }
+];
+
+const SOFTWARE_CATS = ['todas', 'Internet', 'Productividad', 'Multimedia', 'Diseño', 'Desarrollo', 'Utilidades', 'Juegos', 'Sistema'];
+
 
 const state = {
   open: new Map(),          // id -> { el, min, rect }
@@ -205,6 +258,23 @@ const state = {
   anim: true,
   booted: false,
   menubarHidden: false,
+  prefs: {
+    accent: '#5aa9ff',
+    wall: 'torrente',
+    dockPos: 'bottom',
+    blur: true,
+    buttons: 'left',
+    deskSize: 48,
+    radius: 14
+  },
+  software: {
+    tab: 'descubrir',
+    query: '',
+    cat: 'todas',
+    progress: {},
+    installed: ['firefox', 'thunderbird', 'terminal'],
+    updates: ['vlc', 'gimp']
+  },
   system: {
     wifi: true,
     wifiNetwork: 'liquido-5G',
@@ -224,8 +294,9 @@ const state = {
   },
   views: {
     archivos: { path: 'inicio', stack: ['inicio'], selected: null, query: '' },
-    navegador: { stack: ['inicio'], index: 0, query: '' },
-    correo: { box: 'inbox', selected: null, compose: null },
+    navegador: { tabs: [{ stack: ['inicio'], index: 0 }], active: 0, query: '', favs: ['inicio'], history: ['inicio'] },
+    correo: { box: 'inbox', selected: null, compose: null, query: '' },
+    terminal: { cwd: '/home/sebas' },
     notas: {
       index: 0,
       notes: [
@@ -353,13 +424,18 @@ function buildDock() {
 function magnify(e) {
   if (!state.mag) return;
   const items = $$('.dock-item', dock);
-  const sigma = 78;
+  const vertical = document.body.classList.contains('dock-left') || document.body.classList.contains('dock-right');
+  const sigma = vertical ? 70 : 78;
   items.forEach((el) => {
     const r = el.getBoundingClientRect();
-    const d = e.clientX - (r.left + r.width / 2);
+    const d = vertical
+      ? e.clientY - (r.top + r.height / 2)
+      : e.clientX - (r.left + r.width / 2);
     const s = 1 + 0.34 * Math.exp(-(d * d) / (2 * sigma * sigma));
     el.style.setProperty('--s', s.toFixed(3));
-    el.style.transform = `translateY(${(-(s - 1) * 16).toFixed(2)}px) scale(${s.toFixed(3)})`;
+    el.style.transform = vertical
+      ? `scale(${s.toFixed(3)})`
+      : `translateY(${(-(s - 1) * 16).toFixed(2)}px) scale(${s.toFixed(3)})`;
   });
 }
 
@@ -625,11 +701,71 @@ function setTheme(mode) {
     b.classList.toggle('on', b.dataset.theme === state.theme);
   });
 
+  savePrefs();
+
   if (state.open.has('ajustes')) {
     const active = document.activeElement;
     const editing = active && active.closest('#windows');
     if (!editing) rerenderWindow('ajustes');
   }
+}
+
+/* ------------------------ Personalización ------------------------ */
+
+function savePrefs() {
+  try {
+    const data = {
+      theme: state.theme,
+      prefs: state.prefs,
+      system: { dockAuto: state.system.dockAuto, dockSize: state.system.dockSize, night: state.system.night }
+    };
+    localStorage.setItem('liquidos.prefs', JSON.stringify(data));
+  } catch { /* almacenamiento bloqueado */ }
+}
+
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem('liquidos.prefs');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.theme === 'light' || data.theme === 'dark') state.theme = data.theme;
+    if (data.prefs) Object.assign(state.prefs, data.prefs);
+    if (data.system) {
+      if (typeof data.system.dockAuto === 'boolean') state.system.dockAuto = data.system.dockAuto;
+      if (Number(data.system.dockSize)) state.system.dockSize = Number(data.system.dockSize);
+      if (typeof data.system.night === 'boolean') state.system.night = data.system.night;
+    }
+  } catch { /* datos corruptos: se ignoran */ }
+}
+
+function setPref(key, value, announce) {
+  state.prefs[key] = value;
+  applyPrefs();
+  savePrefs();
+  if (announce) toast(announce);
+  if (state.open.has('ajustes')) rerenderWindow('ajustes');
+}
+
+function applyPrefs() {
+  const p = state.prefs;
+  const root = document.documentElement;
+  root.style.setProperty('--accent', p.accent);
+  root.style.setProperty('--radius-win', p.radius + 'px');
+  root.style.setProperty('--desk-size', p.deskSize + 'px');
+
+  document.body.dataset.wall = p.wall;
+  document.body.classList.toggle('dock-left', p.dockPos === 'left');
+  document.body.classList.toggle('dock-right', p.dockPos === 'right');
+  document.body.classList.toggle('no-blur', !p.blur);
+  document.body.classList.toggle('buttons-right', p.buttons === 'right');
+}
+
+function resetPrefs() {
+  state.prefs = { accent: '#5aa9ff', wall: 'torrente', dockPos: 'bottom', blur: true, buttons: 'left', deskSize: 48, radius: 14 };
+  applyPrefs();
+  savePrefs();
+  if (state.open.has('ajustes')) rerenderWindow('ajustes');
+  toast('Apariencia restablecida');
 }
 
 /* ---------------------------- Contenidos ---------------------------- */
@@ -639,6 +775,7 @@ function render(id) {
     case 'archivos': return viewFinder();
     case 'navegador': return viewBrowser();
     case 'correo': return viewMail();
+    case 'software': return viewSoftware();
     case 'notas': return viewNotes();
     case 'musica': return viewMusic();
     case 'terminal': return viewTerminal();
@@ -832,6 +969,7 @@ function wireFinder(win) {
 /* ---------------------------- Navegador ---------------------------- */
 
 const SITE_URL = {
+  nueva: 'liquidos.local/nueva',
   inicio: 'liquidos.local/inicio',
   favoritos: 'liquidos.local/favoritos',
   historial: 'liquidos.local/historial',
@@ -839,10 +977,10 @@ const SITE_URL = {
 };
 
 function sitePageTitle(id) {
-  return { inicio: 'Inicio', favoritos: 'Favoritos', historial: 'Historial', descargas: 'Descargas' }[id] || 'Inicio';
+  return { nueva: 'Nueva pestaña', inicio: 'Inicio', favoritos: 'Favoritos', historial: 'Historial', descargas: 'Descargas' }[id] || 'Inicio';
 }
 
-function browserPageHtml(id) {
+function browserPageHtml(id, b) {
   if (id === 'buscar') {
     const q = state.views.navegador.query || '';
     return `
@@ -853,37 +991,48 @@ function browserPageHtml(id) {
     </div>`;
   }
 
+  if (id === 'nueva') {
+    return `
+    <div class="page start-page">
+      <svg class="mark" viewBox="0 0 100 120"><path d="M50 4c14 22 34 44 34 66a34 34 0 1 1-68 0C16 48 36 26 50 4z" fill="#5aa9ff"/></svg>
+      <h2>Nueva pestaña</h2>
+      <p>Escribe una dirección o elige un acceso rápido.</p>
+      <div class="tiles">
+        <button class="tile" data-page="inicio"><b>⌂</b>Inicio</button>
+        <button class="tile" data-page="favoritos"><b>★</b>Favoritos</button>
+        <button class="tile" data-page="historial"><b>↺</b>Historial</button>
+        <button class="tile" data-page="descargas"><b>⤓</b>Descargas</button>
+      </div>
+    </div>`;
+  }
+
   if (id === 'favoritos') {
+    const favs = b.favs.filter((f) => SITE_URL[f] && f !== 'nueva');
     return `
     <div class="page">
       <h2>Favoritos</h2>
       <p class="lead">Los sitios que guardaste en este equipo.</p>
-      <button class="list-row" data-page="inicio">
-        <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons('globe')}</span>
-        <span><b>LiquidOS</b><small>liquidos.local/inicio</small></span>
-        <span class="meta">Inicio</span>
-      </button>
-      <button class="list-row" data-page="descargas">
-        <span class="mini app-icon" style="--c1:#63e6dd;--c2:#0b8f96">${icons('download')}</span>
-        <span><b>Descargas</b><small>liquidos.local/descargas</small></span>
-        <span class="meta">Sistema</span>
-      </button>
-      <button class="list-row" data-page="historial">
-        <span class="mini app-icon" style="--c1:#ffd48f;--c2:#f09a3c">${icons('clock')}</span>
-        <span><b>Historial</b><small>liquidos.local/historial</small></span>
-        <span class="meta">Reciente</span>
-      </button>
+      ${favs.length ? favs.map((f) => `
+        <button class="list-row" data-page="${f}">
+          <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons(f === 'descargas' ? 'download' : f === 'historial' ? 'clock' : 'globe')}</span>
+          <span><b>${sitePageTitle(f)}</b><small>${SITE_URL[f]}</small></span>
+          <span class="meta">${b.favs.includes(f) ? 'Guardado' : ''}</span>
+        </button>`).join('') : '<div class="finder-empty">Aún no has guardado ningún favorito. Usa la estrella de la barra.</div>'}
     </div>`;
   }
 
   if (id === 'historial') {
+    const seen = [...new Set(b.history)].filter((h) => SITE_URL[h] && h !== 'nueva');
     return `
     <div class="page">
       <h2>Historial</h2>
       <p class="lead">Páginas visitadas en esta sesión.</p>
-      <button class="list-row" data-page="inicio"><span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons('globe')}</span><span><b>Bienvenido a LiquidOS</b><small>liquidos.local/inicio</small></span><span class="meta">Ahora</span></button>
-      <button class="list-row" data-page="favoritos"><span class="mini app-icon" style="--c1:#ffd48f;--c2:#f09a3c">${icons('tag')}</span><span><b>Favoritos</b><small>liquidos.local/favoritos</small></span><span class="meta">Hoy</span></button>
-      <button class="list-row" data-page="descargas"><span class="mini app-icon" style="--c1:#63e6dd;--c2:#0b8f96">${icons('download')}</span><span><b>Descargas</b><small>liquidos.local/descargas</small></span><span class="meta">Ayer</span></button>
+      ${seen.length ? seen.map((h, i) => `
+        <button class="list-row" data-page="${h}">
+          <span class="mini app-icon" style="--c1:#6fc0ff;--c2:#1a6fe0">${icons(h === 'descargas' ? 'download' : h === 'favoritos' ? 'tag' : 'globe')}</span>
+          <span><b>${sitePageTitle(h)}</b><small>${SITE_URL[h]}</small></span>
+          <span class="meta">${i === 0 ? 'Ahora' : i < 3 ? 'Hoy' : 'Esta sesión'}</span>
+        </button>`).join('') : '<div class="finder-empty">Todavía no hay historial.</div>'}
     </div>`;
   }
 
@@ -912,35 +1061,100 @@ function browserPageHtml(id) {
   </div>`;
 }
 
+function curTab() {
+  const b = state.views.navegador;
+  return b.tabs[b.active] || b.tabs[0];
+}
+
 function viewBrowser() {
   const b = state.views.navegador;
-  const id = b.stack[b.index] || 'inicio';
+  const tab = curTab();
+  const id = tab.stack[tab.index] || 'inicio';
   const url = id === 'buscar'
     ? `liquidos.local/buscar?q=${encodeURIComponent(b.query)}`
     : SITE_URL[id];
+  const fav = b.favs.includes(id);
 
   return `
-  <div class="browser">
-    <div class="browser-bar">
-      <button class="nav" data-nav="back" title="Atrás" ${b.index === 0 ? 'disabled' : ''}>${icons('back')}</button>
-      <button class="nav" data-nav="forward" title="Adelante" ${b.index >= b.stack.length - 1 ? 'disabled' : ''}>${icons('forward')}</button>
-      <div class="url">${icons('globe')}<input data-url value="${escapeHtml(url)}" spellcheck="false" aria-label="Dirección"></div>
-      <button class="nav" data-nav="reload" title="Recargar">${icons('reload')}</button>
-      <button class="nav" data-nav="search" title="Buscar">${icons('search')}</button>
+  <div class="browser ff">
+    <div class="ff-tabs">
+      ${b.tabs.map((t, i) => {
+        const tid = t.stack[t.index] || 'inicio';
+        return `
+        <button class="ff-tab ${i === b.active ? 'on' : ''}" data-tab="${i}" title="${escapeHtml(sitePageTitle(tid))}">
+          <span class="ff-tab-ico">${icons('globe')}</span>
+          <span class="ff-tab-title">${escapeHtml(sitePageTitle(tid))}</span>
+          <span class="ff-tab-x" data-tab-close="${i}" role="button" title="Cerrar pestaña">×</span>
+        </button>`;
+      }).join('')}
+      <button class="ff-new" data-tab-new="1" title="Nueva pestaña" aria-label="Nueva pestaña">+</button>
     </div>
-    ${browserPageHtml(id)}
+    <div class="browser-bar">
+      <button class="nav" data-nav="back" title="Atrás" ${tab.index === 0 ? 'disabled' : ''}>${icons('back')}</button>
+      <button class="nav" data-nav="forward" title="Adelante" ${tab.index >= tab.stack.length - 1 ? 'disabled' : ''}>${icons('forward')}</button>
+      <button class="nav" data-nav="reload" title="Recargar">${icons('reload')}</button>
+      <button class="nav" data-nav="home" title="Inicio">${icons('home')}</button>
+      <div class="url">${icons('globe')}<input data-url value="${escapeHtml(url)}" spellcheck="false" aria-label="Dirección"></div>
+      <button class="nav fav ${fav ? 'on' : ''}" data-fav="1" title="${fav ? 'Quitar de favoritos' : 'Guardar en favoritos'}">${icons('tag')}</button>
+      <button class="nav" data-nav="search" title="Buscar en la página">${icons('search')}</button>
+    </div>
+    ${browserPageHtml(id, b)}
   </div>`;
 }
 
 function browserGo(id) {
   const b = state.views.navegador;
+  const tab = curTab();
+  if (!tab) return;
   if (id === 'buscar' && !b.query) id = 'inicio';
-  b.stack = b.stack.slice(0, b.index + 1);
-  b.stack.push(id);
-  if (b.stack.length > 30) {
-    b.stack.shift();
+  tab.stack = tab.stack.slice(0, tab.index + 1);
+  tab.stack.push(id);
+  if (tab.stack.length > 30) tab.stack.shift();
+  tab.index = tab.stack.length - 1;
+  b.history = [id, ...b.history.filter((h) => h !== id)].slice(0, 24);
+  rerenderWindow('navegador');
+}
+
+function browserNewTab() {
+  const b = state.views.navegador;
+  b.tabs.push({ stack: ['nueva'], index: 0 });
+  b.active = b.tabs.length - 1;
+  b.history = ['nueva', ...b.history.filter((h) => h !== 'nueva')];
+  rerenderWindow('navegador');
+}
+
+function browserCloseTab(index) {
+  const b = state.views.navegador;
+  if (b.tabs.length === 1) {
+    b.tabs = [{ stack: ['nueva'], index: 0 }];
+    b.active = 0;
+    rerenderWindow('navegador');
+    return;
   }
-  b.index = b.stack.length - 1;
+  b.tabs.splice(index, 1);
+  b.active = Math.max(0, Math.min(b.active, b.tabs.length - 1));
+  rerenderWindow('navegador');
+}
+
+function browserSelectTab(index) {
+  const b = state.views.navegador;
+  if (!b.tabs[index]) return;
+  b.active = index;
+  rerenderWindow('navegador');
+}
+
+function browserToggleFav() {
+  const b = state.views.navegador;
+  const tab = curTab();
+  const id = tab.stack[tab.index];
+  if (!id || id === 'buscar' || id === 'nueva') { toast('Esta página no se puede guardar'); return; }
+  if (b.favs.includes(id)) {
+    b.favs = b.favs.filter((f) => f !== id);
+    toast('Página quitada de favoritos');
+  } else {
+    b.favs.push(id);
+    toast('Página guardada en favoritos');
+  }
   rerenderWindow('navegador');
 }
 
@@ -957,13 +1171,15 @@ function browserNavigate(raw) {
 function wireBrowser(win) {
   const body = win.querySelector('.win-body');
   const b = state.views.navegador;
+  const tab = curTab();
 
   $$('[data-nav]', body).forEach((btn) => {
     btn.addEventListener('click', () => {
       const action = btn.dataset.nav;
-      if (action === 'back' && b.index > 0) { b.index--; rerenderWindow('navegador'); }
-      else if (action === 'forward' && b.index < b.stack.length - 1) { b.index++; rerenderWindow('navegador'); }
+      if (action === 'back' && tab.index > 0) { tab.index--; rerenderWindow('navegador'); }
+      else if (action === 'forward' && tab.index < tab.stack.length - 1) { tab.index++; rerenderWindow('navegador'); }
       else if (action === 'reload') { toast('Recargando…', 900); rerenderWindow('navegador'); }
+      else if (action === 'home') browserGo('inicio');
       else if (action === 'search') {
         const input = $('[data-url]', body);
         if (input) { input.focus(); input.select(); }
@@ -974,6 +1190,26 @@ function wireBrowser(win) {
   $$('[data-page]', body).forEach((btn) => {
     btn.addEventListener('click', () => browserGo(btn.dataset.page));
   });
+
+  $$('[data-tab]', body).forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('[data-tab-close]')) return;
+      browserSelectTab(Number(el.dataset.tab));
+    });
+  });
+
+  $$('[data-tab-close]', body).forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      browserCloseTab(Number(el.dataset.tabClose));
+    });
+  });
+
+  const newTab = $('[data-tab-new]', body);
+  if (newTab) newTab.addEventListener('click', () => browserNewTab());
+
+  const fav = $('[data-fav]', body);
+  if (fav) fav.addEventListener('click', () => browserToggleFav());
 
   const url = $('[data-url]', body);
   if (url) {
@@ -988,7 +1224,7 @@ function wireBrowser(win) {
   });
 
   const title = win.querySelector('.win-title');
-  if (title) title.textContent = `Navegador — ${sitePageTitle(b.stack[b.index])}`;
+  if (title) title.textContent = `Firefox — ${sitePageTitle(tab.stack[tab.index])}`;
 }
 
 /* ---------------------------- Correo ---------------------------- */
@@ -1061,14 +1297,16 @@ function viewMail() {
     <div class="mail-panel">
       <div class="mail-toolbar">
         <b>${v.box === 'inbox' ? 'Bandeja de entrada' : v.box === 'sent' ? 'Enviados' : 'Archivo'}</b>
-        <span>${list.length} mensaje${list.length === 1 ? '' : 's'}</span>
+        <input class="finder-search mail-search" data-mail-search placeholder="Buscar mensajes" value="${escapeHtml(v.query || '')}" aria-label="Buscar mensajes">
+        <span data-mail-count>${list.length} mensaje${list.length === 1 ? '' : 's'}</span>
       </div>
       ${list.length ? list.map((m) => `
-        <button class="mail-row" data-msg="${m.id}">
+        <button class="mail-row" data-msg="${m.id}" data-mail-text="${escapeHtml((m.from + ' ' + m.subject + ' ' + m.body).toLowerCase())}">
           <span class="mail-dot ${m.unread ? 'on' : ''}"></span>
           <span class="mail-text"><b>${escapeHtml(m.from)}</b><small>${escapeHtml(m.subject)}</small></span>
           <span class="mail-when">${m.when}</span>
         </button>`).join('') : '<div class="mail-empty">No hay mensajes en este buzón.</div>'}
+      <div class="mail-empty" data-mail-empty hidden>Ningún mensaje coincide con la búsqueda.</div>
     </div>
   </div>`;
 }
@@ -1108,6 +1346,24 @@ function wireMail(win) {
       rerenderWindow('correo');
     });
   });
+
+  const search = $('[data-mail-search]', body);
+  if (search) {
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      v.query = search.value;
+      let visible = 0;
+      $$('.mail-row', body).forEach((row) => {
+        const match = !q || (row.dataset.mailText || '').includes(q);
+        row.hidden = !match;
+        if (match) visible++;
+      });
+      const empty = $('[data-mail-empty]', body);
+      if (empty) empty.hidden = visible > 0 || !$$('.mail-row', body).length;
+      const count = $('[data-mail-count]', body);
+      if (count) count.textContent = `${visible} mensaje${visible === 1 ? '' : 's'}`;
+    });
+  }
 
   $$('[data-mail-act]', body).forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1160,6 +1416,224 @@ function wireMail(win) {
       }
     });
   });
+}
+
+/* ---------------------- Centro de software ---------------------- */
+
+function swItem(id) {
+  return CATALOG.find((c) => c.id === id);
+}
+
+function swInstalled(id) {
+  return state.software.installed.includes(id);
+}
+
+function viewSoftware() {
+  const sw = state.software;
+  const installedCount = sw.installed.length;
+
+  let items = CATALOG.slice();
+  if (sw.tab === 'instalados') items = items.filter((it) => swInstalled(it.id));
+  if (sw.tab === 'actualizaciones') items = items.filter((it) => sw.updates.includes(it.id));
+  if (sw.cat !== 'todas') items = items.filter((it) => it.cat === sw.cat);
+
+  if (!items.length) {
+    items = [];
+  }
+
+  const card = (it) => {
+    const installed = swInstalled(it.id);
+    const prog = sw.progress[it.id];
+    return `
+    <article class="sw-card" data-sw-app="${it.id}" data-sw-name="${escapeHtml(it.name.toLowerCase())}" data-sw-summary="${escapeHtml(it.summary.toLowerCase())}">
+      <span class="app-icon sw-ico" style="--c1:${it.c1};--c2:${it.c2}">${svg(it.glyph)}</span>
+      <div class="sw-info">
+        <b>${escapeHtml(it.name)}</b>
+        <small>${escapeHtml(it.summary)}</small>
+        <span class="sw-meta">${escapeHtml(it.cat)} · ${it.size} · ★ ${it.rating.toFixed(1)}</span>
+      </div>
+      <div class="sw-actions">
+        ${prog !== undefined
+          ? `<div class="sw-progress" data-sw-progress="${it.id}"><span style="width:${Math.round(prog)}%"></span></div>`
+          : installed
+            ? `${it.app ? `<button class="btn primary" data-sw-open="${it.id}">Abrir</button>` : ''}
+               ${sw.updates.includes(it.id) ? `<button class="btn" data-sw-update="${it.id}">Actualizar</button>` : ''}
+               ${it.core ? '' : `<button class="btn" data-sw-remove="${it.id}">Quitar</button>`}`
+            : `<button class="btn primary" data-sw-install="${it.id}">Instalar</button>`}
+      </div>
+    </article>`;
+  };
+
+  return `
+  <div class="software">
+    <div class="sw-head">
+      <div class="seg2 sw-tabs">
+        <button data-sw-tab="descubrir" class="${sw.tab === 'descubrir' ? 'on' : ''}">Descubrir</button>
+        <button data-sw-tab="instalados" class="${sw.tab === 'instalados' ? 'on' : ''}">Instalados · ${installedCount}</button>
+        <button data-sw-tab="actualizaciones" class="${sw.tab === 'actualizaciones' ? 'on' : ''}">Actualizaciones · ${sw.updates.length}</button>
+      </div>
+      <input class="finder-search" data-sw-search placeholder="Buscar aplicaciones" value="${escapeHtml(sw.query)}" aria-label="Buscar aplicaciones">
+    </div>
+
+    ${sw.tab === 'descubrir' ? `
+      <div class="sw-cats">
+        ${SOFTWARE_CATS.map((c) => `<button class="sw-chip ${sw.cat === c ? 'on' : ''}" data-sw-cat="${c}">${c === 'todas' ? 'Todas' : c}</button>`).join('')}
+      </div>` : ''}
+
+    ${sw.tab === 'actualizaciones' && sw.updates.length ? `
+      <div class="sw-banner">
+        <span>${icons('downloadCloud')} Hay ${sw.updates.length} actualizaciones disponibles · Flathub y Debian</span>
+        <button class="btn primary" data-sw-update-all="1">Actualizar todo</button>
+      </div>` : ''}
+
+    <div class="sw-list" data-sw-list>
+      ${items.map(card).join('')}
+      <div class="sw-empty" ${items.length ? 'hidden' : ''}>No hay aplicaciones que coincidan con «${escapeHtml(sw.query)}»${sw.cat !== 'todas' ? ' en ' + escapeHtml(sw.cat) : ''}.</div>
+    </div>
+
+    <div class="sw-foot">
+      <span>Flathub conectado · ${installedCount} aplicaciones instaladas</span>
+      <span>Los paquetes Debian también están disponibles</span>
+    </div>
+  </div>`;
+}
+
+function softwareInstall(id) {
+  const sw = state.software;
+  const it = swItem(id);
+  if (!it || sw.progress[id] !== undefined) return;
+  sw.progress[id] = 6;
+  if (state.open.has('software')) {
+    const card = $(`.sw-card[data-sw-app="${id}"] .sw-actions`, $('#windows'));
+    if (card) card.innerHTML = `<div class="sw-progress" data-sw-progress="${id}"><span style="width:6%"></span></div>`;
+  }
+  toast(`Descargando ${it.name}…`, 1400);
+
+  const timer = setInterval(() => {
+    const cur = sw.progress[id] ?? 0;
+    const next = Math.min(100, cur + 9 + Math.random() * 12);
+    sw.progress[id] = next;
+
+    const bar = $(`[data-sw-progress="${id}"] span`, $('#windows'));
+    if (bar) bar.style.width = Math.round(next) + '%';
+
+    if (next >= 100) {
+      clearInterval(timer);
+      delete sw.progress[id];
+      if (!sw.installed.includes(id)) sw.installed.push(id);
+      sw.updates = sw.updates.filter((x) => x !== id);
+      if (state.open.has('software')) rerenderWindow('software');
+      toast(`${it.name} instalado`);
+      beep(720);
+    }
+  }, 140);
+}
+
+function softwareRemove(id) {
+  const it = swItem(id);
+  state.software.installed = state.software.installed.filter((x) => x !== id);
+  if (state.open.has('software')) rerenderWindow('software');
+  toast(`${it ? it.name : 'Aplicación'} desinstalado`);
+}
+
+function softwareOpen(id) {
+  const it = swItem(id);
+  if (!it) return;
+  if (it.app) {
+    openApp(it.app);
+    toast(`Abriendo ${it.name}`);
+  } else {
+    toast(`${it.name} se ha añadido al menú de aplicaciones`);
+  }
+}
+
+function softwareUpdateAll() {
+  const sw = state.software;
+  if (!sw.updates.length) { toast('No hay actualizaciones pendientes'); return; }
+  const total = sw.updates.length;
+  toast(`Actualizando ${total} aplicaciones…`, 1800);
+  sw.updates.forEach((id) => {
+    sw.progress[id] = 8;
+  });
+  if (state.open.has('software')) rerenderWindow('software');
+
+  const timer = setInterval(() => {
+    let done = true;
+    sw.updates.forEach((id) => {
+      const next = Math.min(100, (sw.progress[id] ?? 0) + 12);
+      sw.progress[id] = next;
+      const bar = $(`[data-sw-progress="${id}"] span`, $('#windows'));
+      if (bar) bar.style.width = Math.round(next) + '%';
+      if (next < 100) done = false;
+    });
+    if (done) {
+      clearInterval(timer);
+      sw.updates.forEach((id) => delete sw.progress[id]);
+      sw.updates = [];
+      if (state.open.has('software')) rerenderWindow('software');
+      toast('Todo está al día');
+      beep(660);
+    }
+  }, 120);
+}
+
+function filterSoftware(win) {
+  const q = state.software.query.trim().toLowerCase();
+  let count = 0;
+  $$('.sw-card', win).forEach((card) => {
+    const match = !q || card.dataset.swName.includes(q) || card.dataset.swSummary.includes(q);
+    card.hidden = !match;
+    if (match) count++;
+  });
+  const empty = $('.sw-empty', win);
+  if (empty) empty.hidden = count > 0;
+}
+
+function wireSoftware(win) {
+  const body = win.querySelector('.win-body');
+  const sw = state.software;
+
+  $$('[data-sw-tab]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sw.tab = btn.dataset.swTab;
+      sw.query = '';
+      rerenderWindow('software');
+    });
+  });
+
+  $$('[data-sw-cat]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sw.cat = btn.dataset.swCat;
+      rerenderWindow('software');
+    });
+  });
+
+  $$('[data-sw-install]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareInstall(btn.dataset.swInstall));
+  });
+  $$('[data-sw-remove]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareRemove(btn.dataset.swRemove));
+  });
+  $$('[data-sw-open]', body).forEach((btn) => {
+    btn.addEventListener('click', () => softwareOpen(btn.dataset.swOpen));
+  });
+  $$('[data-sw-update]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sw.updates = sw.updates.filter((x) => x !== btn.dataset.swUpdate);
+      if (state.open.has('software')) rerenderWindow('software');
+      toast('Actualizado');
+    });
+  });
+  const all = $('[data-sw-update-all]', body);
+  if (all) all.addEventListener('click', softwareUpdateAll);
+
+  const search = $('[data-sw-search]', body);
+  if (search) {
+    search.addEventListener('input', () => {
+      sw.query = search.value;
+      filterSoftware(win);
+    });
+  }
 }
 
 /* ---------------------------- Notas ---------------------------- */
@@ -1399,131 +1873,740 @@ function musicTick() {
 /* ---------------------------- Terminal ---------------------------- */
 
 const NEOFETCH_BLOCK = `
-  <div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ neofetch</div>
   <pre class="neo"><span style="color:#5aa9ff">      ▄▄▄▄▄▄▄      </span>  <span class="c">sebas</span>@<span class="c">liquidos</span>
 <span style="color:#5aa9ff">    ▄█▀     ▀█▄    </span>  ----------------------
 <span style="color:#7b5cff">    ██   ▄▄▄   ██   </span>  <span class="w">OS</span>: LiquidOS 1.0 "Torrente" x86_64
 <span style="color:#7b5cff">    ██  █████  ██   </span>  <span class="w">Kernel</span>: 6.1.0-liquidos-amd64
 <span style="color:#2fd1c5">     ▀█▄  ▀▀▀  ▄█▀    </span>  <span class="w">Shell</span>: zsh 5.9
-<span style="color:#2fd1c5">      ▀▀▀▀▀▀▀      </span>  <span class="w">DE</span>: GNOME 46 (LiquidShell)
+<span style="color:#2fd1c5">      ▀▀▀▀▀▀▀      </span>  <span class="w">DE</span>: GNOME (LiquidShell)
                         <span class="w">WM</span>: Mutter
                         <span class="w">Theme</span>: WhiteSur-Dark
                         <span class="w">Icons</span>: WhiteSur-dark
                         <span class="w">CPU</span>: AMD Ryzen 7 (16) @ 3.8GHz
                         <span class="w">Memory</span>: 2.4GiB / 16GiB</pre>`;
 
-const TERM_HELP = `Comandos disponibles:<br>
-<span class="c">help</span> — esta ayuda · <span class="c">neofetch</span> — información del sistema<br>
-<span class="c">ls</span> — archivos · <span class="c">cat /etc/os-release</span> — identidad<br>
-<span class="c">date</span> · <span class="c">whoami</span> · <span class="c">pwd</span> · <span class="c">uname -a</span> · <span class="c">uptime</span><br>
-<span class="c">open archivos|notas|musica|ajustes</span> — abre una app<br>
-<span class="c">theme light|dark</span> — cambia la apariencia · <span class="c">about</span> — Acerca de<br>
-<span class="c">history</span> — comandos usados · <span class="c">clear</span> · <span class="c">exit</span>`;
+const TERM_USER = 'sebas';
+const TERM_HOST = 'liquidos';
 
-const OS_RELEASE = `NAME="LiquidOS"<br>VERSION="1.0 (Torrente)"<br>ID=liquidos<br>ID_LIKE=debian<br>PRETTY_NAME="LiquidOS 1.0 (Torrente)"`;
+const OS_RELEASE_TEXT = `NAME="LiquidOS"
+VERSION="1.0 (Torrente)"
+VERSION_ID="1.0"
+ID=liquidos
+ID_LIKE=debian
+PRETTY_NAME="LiquidOS 1.0 (Torrente)"
+HOME_URL="https://liquidos.example"`;
+
+const TERM_HELP = `Comandos disponibles:<br>
+<span class="c">help</span> · <span class="c">neofetch</span> · <span class="c">liquidos help</span><br><br>
+<b>Archivos</b><br>
+<span class="c">pwd</span> · <span class="c">ls [-la]</span> · <span class="c">cd</span> · <span class="c">cat</span> · <span class="c">head</span> · <span class="c">tail</span><br>
+<span class="c">touch</span> · <span class="c">mkdir</span> · <span class="c">rm</span> · <span class="c">cp</span> · <span class="c">mv</span> · <span class="c">find</span> · <span class="c">tree</span><br>
+<span class="c">grep</span> · <span class="c">wc</span> · <span class="c">sort</span> · <span class="c">echo texto &gt; archivo</span> · <span class="c">cat archivo | grep algo</span><br><br>
+<b>Sistema</b><br>
+<span class="c">whoami</span> · <span class="c">hostname</span> · <span class="c">uname -a</span> · <span class="c">date</span> · <span class="c">uptime</span><br>
+<span class="c">free -h</span> · <span class="c">df -h</span> · <span class="c">ps</span> · <span class="c">ping</span> · <span class="c">curl</span> · <span class="c">clear</span><br><br>
+<b>Paquetes y ajustes</b><br>
+<span class="c">sudo apt update</span> · <span class="c">sudo apt install vlc</span> · <span class="c">apt search foto</span><br>
+<span class="c">flatpak install flathub org.gimp.GIMP</span> · <span class="c">liquidos doctor</span> · <span class="c">liquidos store</span><br>
+<span class="c">theme light|dark</span> · <span class="c">accent azul</span> · <span class="c">wallpaper oceano</span><br>
+<span class="c">open firefox|correo|software|ajustes</span> · <span class="c">history</span> · <span class="c">exit</span>`;
+
+/* Sistema de archivos del terminal (independiente de la app Archivos) */
+
+const TERM_FS = {
+  '/': { dirs: ['etc', 'home', 'tmp', 'usr', 'var'], files: {} },
+  '/home': { dirs: ['sebas'], files: {} },
+  '/home/sebas': {
+    dirs: ['Documentos', 'Descargas', 'Escritorio', 'Imágenes', 'Música', 'Proyectos'],
+    files: {
+      'bienvenida.txt': 'Bienvenido a LiquidOS 1.0 «Torrente».\nTodo lo que necesitas está instalado: Firefox, Thunderbird, el Centro de software y una terminal completa.\n\nPrueba: liquidos doctor',
+      'notas.txt': 'Ideas para el escritorio\n- Probar el nuevo Centro de software\n- Cambiar el color de acento\n- Instalar VLC con apt',
+      '.zshrc': 'PROMPT="%F{39}%n%f@%F{141}%m%f %F{244}%~%f %F{39}❯%f "\nalias actualizar="liquidos update"\nalias tienda="liquidos store"'
+    }
+  },
+  '/home/sebas/Documentos': { dirs: [], files: { 'notas-reunion.md': '# Reunión del lunes\n- Revisar el Dock\n- Probar Firefox\n- Preparar la ISO', 'presupuesto.ods': '(documento de LibreOffice Calc)' } },
+  '/home/sebas/Descargas': { dirs: [], files: { 'LiquidOS-1.0-amd64.iso': '(imagen de 2,4 GB)', 'captura-arranque.png': '(imagen PNG de 300 KB)' } },
+  '/home/sebas/Escritorio': { dirs: [], files: {} },
+  '/home/sebas/Imágenes': { dirs: [], files: { 'fondo-oscuro.png': '(imagen PNG de 1,2 MB)', 'captura-escritorio.png': '(imagen PNG de 820 KB)' } },
+  '/home/sebas/Música': { dirs: [], files: { 'oceano-de-datos.mp3': '(audio MP3 de 3:42)' } },
+  '/home/sebas/Proyectos': { dirs: ['liquidos'], files: {} },
+  '/home/sebas/Proyectos/liquidos': { dirs: [], files: { 'README.md': '# LiquidOS\nUna distribución basada en Debian 12 con un escritorio inspirado en macOS.', 'Makefile': 'iso:\n\t./build/build-iso.sh' } },
+  '/etc': { dirs: ['apt', 'skel'], files: { 'os-release': OS_RELEASE_TEXT, hostname: 'liquidos', shells: '/bin/sh\n/bin/bash\n/bin/zsh' } },
+  '/etc/apt': { dirs: ['sources.list.d'], files: { 'sources.list': 'deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\ndeb http://deb.debian.org/debian bookworm-updates main\ndeb http://security.debian.org bookworm-security main' } },
+  '/etc/apt/sources.list.d': { dirs: [], files: { 'flathub.list': '# Flathub se gestiona con flatpak, no con apt' } },
+  '/etc/skel': { dirs: [], files: { '.zshrc': 'PROMPT="%F{39}%n%f@%F{141}%m%f %F{244}%~%f %F{39}❯%f "' } },
+  '/tmp': { dirs: [], files: {} },
+  '/usr': { dirs: ['bin', 'share'], files: {} },
+  '/usr/bin': { dirs: [], files: { firefox: '(binario)', thunderbird: '(binario)', 'gnome-terminal': '(binario)', liquidos: '(script del sistema)' } },
+  '/usr/share': { dirs: ['applications'], files: {} },
+  '/usr/share/applications': { dirs: [], files: { 'firefox-esr.desktop': '[Desktop Entry]\nName=Firefox\nExec=firefox-esr %u', 'thunderbird.desktop': '[Desktop Entry]\nName=Thunderbird' } },
+  '/var': { dirs: ['log'], files: {} },
+  '/var/log': { dirs: [], files: { syslog: 'Oct 28 09:41:02 liquidos systemd[1]: Started GNOME Session Manager.\nOct 28 09:41:04 liquidos NetworkManager[712]: <info> conectado a liquido-5G' } }
+};
+
+const TERM_COMMANDS = [
+  'help', 'neofetch', 'pwd', 'ls', 'cd', 'cat', 'head', 'tail', 'touch', 'mkdir', 'rm', 'cp', 'mv',
+  'find', 'tree', 'grep', 'wc', 'sort', 'uniq', 'echo', 'date', 'whoami', 'hostname', 'uname',
+  'uptime', 'free', 'df', 'ps', 'ping', 'curl', 'clear', 'history', 'open', 'theme', 'accent',
+  'wallpaper', 'apt', 'flatpak', 'liquidos', 'exit'
+];
 
 const termHistory = [];
 let termHistIndex = 0;
+let termCwd = '/home/sebas';
+let termSudo = false;
+
+function termNorm(path) {
+  const parts = path.split('/').filter(Boolean);
+  const out = [];
+  parts.forEach((p) => {
+    if (p === '.') return;
+    if (p === '..') out.pop();
+    else out.push(p);
+  });
+  return '/' + out.join('/');
+}
+
+function termAbs(path) {
+  if (!path) return termCwd;
+  let p = path;
+  if (p === '~') p = '/home/sebas';
+  else if (p.startsWith('~/')) p = '/home/sebas/' + p.slice(2);
+  if (!p.startsWith('/')) p = termCwd + '/' + p;
+  return termNorm(p);
+}
+
+function termDisplay(path = termCwd) {
+  return path.replace(/^\/home\/sebas/, '~') || '/';
+}
+
+function termNode(path) {
+  return TERM_FS[termNorm(path)] || null;
+}
+
+function termParent(path) {
+  const norm = termNorm(path);
+  return norm === '/' ? null : termNorm(norm.replace(/\/[^/]+$/, '') || '/');
+}
+
+function termIsDir(path) {
+  return Boolean(termNode(path));
+}
+
+function termList(path) {
+  const node = termNode(path);
+  if (!node) return null;
+  return [...node.dirs.map((d) => ({ name: d, dir: true })), ...Object.keys(node.files).map((f) => ({ name: f, dir: false }))];
+}
+
+function termRead(path) {
+  const node = termNode(termParent(path));
+  if (!node) return null;
+  const name = termNorm(path).split('/').pop();
+  return Object.prototype.hasOwnProperty.call(node.files, name) ? node.files[name] : null;
+}
+
+function termWrite(path, content, append = false) {
+  const norm = termNorm(path);
+  const parent = termNode(termParent(norm));
+  if (!parent) return false;
+  const name = norm.split('/').pop();
+  parent.files[name] = append && parent.files[name] !== undefined ? parent.files[name] + content : content;
+  return true;
+}
+
+function termRemove(path) {
+  const norm = termNorm(path);
+  const parent = termNode(termParent(norm));
+  if (!parent) return false;
+  const name = norm.split('/').pop();
+  if (Object.prototype.hasOwnProperty.call(parent.files, name)) { delete parent.files[name]; return true; }
+  const idx = parent.dirs.indexOf(name);
+  if (idx >= 0) { parent.dirs.splice(idx, 1); delete TERM_FS[norm]; return true; }
+  return false;
+}
+
+function termMakeDir(path) {
+  const norm = termNorm(path);
+  if (TERM_FS[norm]) return false;
+  const parent = termNode(termParent(norm));
+  if (!parent) return false;
+  const name = norm.split('/').pop();
+  parent.dirs.push(name);
+  TERM_FS[norm] = { dirs: [], files: {} };
+  return true;
+}
+
+function termPromptText() {
+  return `${TERM_USER}@${TERM_HOST}:${termDisplay()}$`;
+}
+
+function termPromptHtml() {
+  return `<span class="prompt">${TERM_USER}@${TERM_HOST}</span>:<span class="d">${escapeHtml(termDisplay())}</span>$`;
+}
 
 function viewTerminal() {
   return `
   <div class="term" data-term>
     <div class="term-scroll" data-term-out>
       ${NEOFETCH_BLOCK}
-      <div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ cat /etc/os-release</div>
-      <div class="term-line dim">NAME="LiquidOS"</div>
-      <div class="term-line dim">VERSION="1.0 (Torrente)"</div>
-      <div class="term-line dim">ID=liquidos</div>
-      <div class="term-line dim">ID_LIKE=debian</div>
-      <div class="term-line dim">PRETTY_NAME="LiquidOS 1.0 (Torrente)"</div>
+      <div class="term-line dim">Escribe <span class="c">help</span> para ver todos los comandos o <span class="c">liquidos doctor</span> para revisar el sistema.</div>
+      <div class="term-line dim">Firefox, Thunderbird y el Centro de software ya vienen instalados.</div>
     </div>
     <div class="term-line term-input-row">
-      <span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$&nbsp;<input class="term-input" data-term-input autocomplete="off" spellcheck="false" aria-label="Comando">
+      <span data-term-prompt>${termPromptHtml()}</span>&nbsp;<input class="term-input" data-term-input autocomplete="off" spellcheck="false" aria-label="Comando" placeholder="">
     </div>
   </div>`;
+}
+
+function updateTermPrompt(win) {
+  const el = win.querySelector('[data-term-prompt]');
+  if (el) el.innerHTML = termPromptHtml();
+}
+
+function termPrint(out, html) {
+  out.insertAdjacentHTML('beforeend', html);
+  out.scrollTop = out.scrollHeight;
+}
+
+function termLine(html) {
+  return `<div class="term-line">${html}</div>`;
+}
+
+function termText(text) {
+  return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+function termTokens(str) {
+  const out = [];
+  let cur = '';
+  let quote = null;
+  for (const ch of str) {
+    if (quote) {
+      if (ch === quote) quote = null;
+      else cur += ch;
+    } else if (ch === '"' || ch === "'") quote = ch;
+    else if (/\s/.test(ch)) {
+      if (cur) { out.push(cur); cur = ''; }
+    } else cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+function termWalk(path, depth = 0, acc = []) {
+  const node = termNode(path);
+  if (!node || depth > 4) return acc;
+  acc.push({ path, node, depth });
+  node.dirs.forEach((d) => termWalk(termNorm(path + '/' + d), depth + 1, acc));
+  return acc;
+}
+
+function termGrep(input, pattern, ignoreCase) {
+  const re = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ignoreCase ? 'i' : '');
+  return input.split('\n').filter((l) => re.test(l)).join('\n');
+}
+
+function termApt(args) {
+  const action = (args[0] || '').toLowerCase();
+  const pkgs = args.slice(1).filter((a) => !a.startsWith('-'));
+
+  if (!action) return 'Uso: apt <update|install|remove|search|list> [paquete]';
+
+  if (action === 'update') {
+    return 'Leyendo listas de paquetes… Hecho\nConstruyendo árbol de dependencias… Hecho\nLeyendo información de estado… Hecho\n\n3 paquetes pueden actualizarse. Ejecuta «liquidos update» para hacerlo.';
+  }
+
+  if (action === 'list') {
+    const installed = state.software.installed.map((id) => swItem(id)).filter(Boolean);
+    return installed.map((it) => `${it.id}/now ${it.size} instalado`).join('\n') + '\n\n' + CATALOG.length + ' paquetes disponibles en el catálogo.';
+  }
+
+  if (action === 'search') {
+    const q = pkgs.join(' ').toLowerCase();
+    if (!q) return 'Uso: apt search <texto>';
+    const sinTildes = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const needle = sinTildes(q);
+    const hits = CATALOG.filter((it) => sinTildes(it.name).includes(needle) || sinTildes(it.summary).includes(needle));
+    if (!hits.length) return `No se encontraron paquetes para «${q}».`;
+    return hits.map((it) => `${it.id} — ${it.name} · ${it.summary}`).join('\n');
+  }
+
+  if (action === 'install' || action === 'remove' || action === 'purge') {
+    if (!pkgs.length) return `Uso: sudo apt ${action} <paquete>`;
+    if (action === 'install') {
+      if (!termSudo) return 'E: No se pudo abrir el archivo de bloqueo /var/lib/dpkg/lock-frontend — ¿eres root? Prueba con sudo.';
+      const lines = [];
+      pkgs.forEach((p) => {
+        const it = swItem(p) || CATALOG.find((c) => c.name.toLowerCase() === p.toLowerCase());
+        if (!it) {
+          lines.push(`Se instalará ${p} desde los repositorios de Debian`);
+          lines.push(`Descomprimiendo ${p}…`);
+          lines.push(`Configurando ${p}…`);
+          return;
+        }
+        if (!state.software.installed.includes(it.id)) state.software.installed.push(it.id);
+        state.software.updates = state.software.updates.filter((x) => x !== it.id);
+        lines.push(`Se instalarán los siguientes paquetes: ${it.name} (${it.size})`);
+        lines.push(`Descomprimiendo ${it.id}…`);
+        lines.push(`Configurando ${it.name}…`);
+      });
+      if (state.open.has('software')) rerenderWindow('software');
+      lines.push('Hecho. Las aplicaciones nuevas aparecen en el Centro de software.');
+      toast('Paquetes instalados');
+      return lines.join('\n');
+    }
+    const lines = [];
+    pkgs.forEach((p) => {
+      const it = swItem(p);
+      if (!it) { lines.push(`Eliminando ${p}…`); return; }
+      if (it.core) { lines.push(`E: ${it.name} es parte del sistema base de LiquidOS`); return; }
+      state.software.installed = state.software.installed.filter((x) => x !== it.id);
+      lines.push(`Eliminando ${it.name}…`);
+    });
+    if (state.open.has('software')) rerenderWindow('software');
+    lines.push('Hecho.');
+    return lines.join('\n');
+  }
+
+  return `E: Operación «${action}» no reconocida`;
+}
+
+function termLiquidos(args) {
+  const sub = (args[0] || 'help').toLowerCase();
+
+  if (sub === 'help' || sub === 'ayuda') {
+    return `LiquidOS · utilidades del sistema
+
+  liquidos info              Resumen del equipo
+  liquidos apps              Aplicaciones instaladas
+  liquidos search <texto>    Buscar paquetes
+  liquidos install <paq>     Instalar paquetes
+  liquidos remove <paq>      Desinstalar paquetes
+  liquidos doctor            Comprobar el sistema
+  liquidos update            Actualizar
+  liquidos store             Abrir el Centro de software
+  liquidos theme dark|light  Cambiar la apariencia
+  liquidos wallpaper <id>    Cambiar el fondo
+  liquidos report            Generar un informe de soporte`;
+  }
+
+  if (sub === 'info') {
+    return `LiquidOS 1.0 «Torrente»
+Sistema      Debian 12 (bookworm) · GNOME
+Kernel       ${'6.1.0-liquidos-amd64'}
+Navegador    Firefox (ESR)
+Correo       Thunderbird
+Memoria      2,4 GiB de 16 GiB
+Disco        24 GiB de 64 GiB (38 % usado)`;
+  }
+
+  if (sub === 'apps') {
+    return state.software.installed
+      .map((id) => swItem(id))
+      .filter(Boolean)
+      .map((it) => `  · ${it.name} (${it.cat})`)
+      .join('\n');
+  }
+
+  if (sub === 'doctor') {
+    const s = state.system;
+    const checks = [
+      [true, 'Firefox instalado'],
+      [true, 'Thunderbird instalado'],
+      [state.software.installed.length > 0, 'Centro de software operativo'],
+      [s.wifi, `Red ${s.wifi ? 'conectada a ' + s.wifiNetwork : 'desconectada'}`],
+      [state.system.snd && !state.system.mute, 'Audio disponible'],
+      [true, 'Flathub configurado'],
+      [true, 'Espacio en disco suficiente (38 %)'],
+      [true, 'Sesión gráfica activa (GNOME)']
+    ];
+    return checks.map(([ok, label]) => `  ${ok ? '✔' : '✘'} ${label}`).join('\n');
+  }
+
+  if (sub === 'theme') {
+    if (args[1] === 'light' || args[1] === 'dark') { setTheme(args[1]); return `Tema cambiado a ${args[1]}`; }
+    return 'Uso: liquidos theme dark|light';
+  }
+
+  if (sub === 'store') { openApp('software'); return 'Abriendo el Centro de software…'; }
+
+  if (sub === 'install') {
+    termSudo = true;
+    return termApt(['install', ...args.slice(1)]);
+  }
+
+  if (sub === 'remove' || sub === 'uninstall') {
+    termSudo = true;
+    return termApt(['remove', ...args.slice(1)]);
+  }
+
+  if (sub === 'search' || sub === 'buscar') {
+    return termApt(['search', ...args.slice(1)]);
+  }
+
+  if (sub === 'update') {
+    return 'Leyendo listas de paquetes… Hecho\nCalculando la actualización… Hecho\n0 paquetes actualizados, 0 eliminados. Todo está al día.';
+  }
+
+  if (sub === 'report' || sub === 'reporte') {
+    return 'Informe generado en /tmp/liquidos-report.txt\nIncluye versión del núcleo, estado de la red, audio y los últimos errores del sistema.';
+  }
+
+  if (sub === 'wallpaper') {
+    const wall = WALLS.find((w) => w.id === args[1]);
+    if (!wall) return 'Uso: liquidos wallpaper ' + WALLS.map((w) => w.id).join('|');
+    setPref('wall', wall.id, `Fondo cambiado a ${wall.name}`);
+    return `Fondo de pantalla: ${wall.name}`;
+  }
+
+  return `liquidos: orden desconocida «${sub}». Prueba «liquidos help».`;
+}
+
+function termStage(seg, input) {
+  const tokens = termTokens(seg);
+  if (!tokens.length) return { text: input || '' };
+
+  let cmd = tokens.shift().toLowerCase();
+  const args = tokens;
+  if (cmd === 'sudo') {
+    termSudo = true;
+    cmd = (args.shift() || '').toLowerCase();
+  } else {
+    termSudo = false;
+  }
+
+  const argPath = (i = 0) => (args[i] ? termAbs(args[i]) : termCwd);
+
+  switch (cmd) {
+    case 'help': return { html: '<div class="term-line">' + TERM_HELP + '</div>' };
+    case 'neofetch': return { html: NEOFETCH_BLOCK };
+
+    case 'pwd': return { text: termCwd };
+
+    case 'cd': {
+      const target = args[0] ? termAbs(args[0]) : '/home/sebas';
+      if (!termIsDir(target)) return { text: `cd: ${args[0]}: No existe el directorio` };
+      termCwd = target;
+      updateTermPrompt(state.open.get('terminal')?.el || document);
+      return {};
+    }
+
+    case 'ls': {
+      const showAll = args.some((a) => /^-[a-z]*a/.test(a));
+      const long = args.some((a) => /^-[a-z]*l/.test(a));
+      const target = args.find((a) => !a.startsWith('-'));
+      const path = target ? termAbs(target) : termCwd;
+      const items = termList(path);
+      if (!items) {
+        const file = termRead(path);
+        if (file !== null) return { text: termNorm(path).split('/').pop() };
+        return { text: `ls: no se puede acceder a «${target || path}»: No existe el archivo o directorio` };
+      }
+      let visible = items.filter((it) => showAll || !it.name.startsWith('.'));
+      if (!visible.length) return { text: '' };
+      if (long) {
+        return {
+          text: visible.map((it) => `${it.dir ? 'drwxr-xr-x' : '-rw-r--r--'}  sebas sebas  ${it.dir ? '4,0K' : '1,2K'}  ${it.name}${it.dir ? '/' : ''}`).join('\n')
+        };
+      }
+      return { text: visible.map((it) => it.name + (it.dir ? '/' : '')).join('   ') };
+    }
+
+    case 'cat': {
+      if (!args.length) return { text: input || '' };
+      const parts = args.map((a) => {
+        const path = termAbs(a);
+        const text = termRead(path);
+        if (text !== null) return text;
+        if (termIsDir(path)) return `cat: ${a}: Es un directorio`;
+        return `cat: ${a}: No existe el archivo o directorio`;
+      });
+      return { text: parts.join('\n') };
+    }
+
+    case 'head':
+    case 'tail': {
+      const nIdx = args.findIndex((a) => a === '-n');
+      const n = nIdx >= 0 ? Number(args[nIdx + 1]) || 10 : 10;
+      const file = args.find((a, i) => !a.startsWith('-') && !(nIdx >= 0 && i === nIdx + 1));
+      const body = file ? termRead(termAbs(file)) : (input ?? '');
+      if (body === null) return { text: `${cmd}: ${file}: No existe el archivo` };
+      const lines = body.split('\n');
+      return { text: (cmd === 'head' ? lines.slice(0, n) : lines.slice(-n)).join('\n') };
+    }
+
+    case 'touch': {
+      if (!args.length) return { text: 'Uso: touch <archivo>' };
+      const results = args.map((a) => {
+        const path = termAbs(a);
+        if (termRead(path) !== null) return null;
+        const ok = termWrite(path, '');
+        return ok ? null : `touch: no se puede crear «${a}»`;
+      }).filter(Boolean);
+      return { text: results.join('\n') };
+    }
+
+    case 'mkdir': {
+      const dirs = args.filter((a) => !a.startsWith('-'));
+      if (!dirs.length) return { text: 'Uso: mkdir <directorio>' };
+      const res = dirs.map((d) => (termMakeDir(termAbs(d)) ? null : `mkdir: no se puede crear «${d}»`)).filter(Boolean);
+      return { text: res.join('\n') };
+    }
+
+    case 'rm': {
+      const recursive = args.some((a) => /^-[a-z]*r/.test(a));
+      const files = args.filter((a) => !a.startsWith('-'));
+      if (!files.length) return { text: 'Uso: rm <archivo>' };
+      const res = files.map((f) => {
+        const path = termAbs(f);
+        if (termIsDir(path) && !recursive) return `rm: «${f}» es un directorio (usa -r)`;
+        return termRemove(path) ? null : `rm: no se puede eliminar «${f}»: No existe`;
+      }).filter(Boolean);
+      return { text: res.join('\n') };
+    }
+
+    case 'cp':
+    case 'mv': {
+      if (args.length < 2) return { text: `Uso: ${cmd} <origen> <destino>` };
+      const src = termAbs(args[0]);
+      let dest = termAbs(args[1]);
+      if (termIsDir(dest)) dest = termNorm(dest + '/' + termNorm(src).split('/').pop());
+      const content = termRead(src);
+      if (content === null) return { text: `${cmd}: ${args[0]}: No existe` };
+      termWrite(dest, content);
+      if (cmd === 'mv') termRemove(src);
+      return {};
+    }
+
+    case 'find': {
+      const startArg = args.find((a) => !a.startsWith('-') && !args[args.indexOf(a) - 1]?.startsWith('-name'));
+      const start = startArg && !startArg.includes('*') ? termAbs(startArg) : termCwd;
+      const nameIdx = args.findIndex((a) => a === '-name');
+      const pattern = nameIdx >= 0 ? args[nameIdx + 1] : null;
+      const entries = termWalk(start);
+      const re = pattern ? new RegExp('^' + pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$') : null;
+      const res = entries
+        .filter((e) => !re || re.test(e.path.split('/').pop()))
+        .map((e) => e.path);
+      return { text: res.join('\n') || 'Sin resultados' };
+    }
+
+    case 'tree': {
+      const start = args[0] ? termAbs(args[0]) : termCwd;
+      const lines = [termDisplay(start)];
+      const walk = (path, prefix) => {
+        const items = termList(path) || [];
+        items.forEach((it, i) => {
+          const last = i === items.length - 1;
+          lines.push(prefix + (last ? '└── ' : '├── ') + it.name + (it.dir ? '/' : ''));
+          if (it.dir) walk(termNorm(path + '/' + it.name), prefix + (last ? '    ' : '│   '));
+        });
+      };
+      walk(start, '');
+      return { text: lines.join('\n') };
+    }
+
+    case 'grep': {
+      const ignoreCase = args.includes('-i');
+      const clean = args.filter((a) => !a.startsWith('-'));
+      const pattern = clean.shift();
+      if (!pattern) return { text: 'Uso: grep <texto> [archivo]' };
+      if (clean.length) {
+        const path = termAbs(clean[0]);
+        const body = termRead(path);
+        if (body === null) return { text: `grep: ${clean[0]}: No existe` };
+        const found = termGrep(body, pattern, ignoreCase);
+        return { text: found ? found.split('\n').map((l) => `${clean[0]}:${l}`).join('\n') : '' };
+      }
+      return { text: termGrep(input ?? '', pattern, ignoreCase) };
+    }
+
+    case 'wc': {
+      const body = input ?? termRead(termAbs(args[0] || '')) ?? '';
+      const lines = body ? body.split('\n').length : 0;
+      const words = body.trim() ? body.trim().split(/\s+/).length : 0;
+      const chars = body.length;
+      return { text: `${String(lines).padStart(6)} ${String(words).padStart(6)} ${String(chars).padStart(6)}` };
+    }
+
+    case 'sort': {
+      return { text: (input ?? '').split('\n').filter(Boolean).sort().join('\n') };
+    }
+
+    case 'uniq': {
+      return { text: (input ?? '').split('\n').filter((l, i, a) => l !== a[i - 1]).join('\n') };
+    }
+
+    case 'echo': {
+      return { text: args.join(' ') };
+    }
+
+    case 'date':
+      return { text: new Intl.DateTimeFormat('es-ES', { dateStyle: 'full', timeStyle: 'medium' }).format(new Date()) };
+    case 'whoami': return { text: TERM_USER };
+    case 'hostname': return { text: TERM_HOST };
+    case 'uname':
+      return { text: args.includes('-a') ? 'Linux liquidos 6.1.0-liquidos-amd64 #1 SMP Debian 6.1.0 x86_64 GNU/Linux' : 'Linux' };
+    case 'uptime':
+      return { text: ' 09:41:00 up 12 min, 1 user, load average: 0,42, 0,31, 0,18' };
+    case 'free':
+      return { text: `               total        usado        libre\nMemoria:       15Gi         2,4Gi        12Gi\nSwap:          2,0Gi          0B       2,0Gi` };
+    case 'df':
+      return { text: `S.ficheros     Tamaño Usados  Disp Uso% Montado en\n/dev/vda2        64G    24G    38G  38% /\n/dev/vda1       512M   128M   384M  25% /boot` };
+    case 'ps':
+      return { text: `  PID TTY          TIME CMD\n 1421 tty1     00:00:02 gnome-shell\n 1530 pts/0    00:00:00 zsh\n 1534 pts/0    00:00:00 firefox-esr\n 1587 pts/0    00:00:00 thunderbird` };
+    case 'ping':
+      return { text: `Haciendo ping a ${args[0] || 'liquidos.local'}…\n64 bytes: icmp_seq=1 ttl=64 tiempo=0.412 ms\n64 bytes: icmp_seq=2 ttl=64 tiempo=0.388 ms\n64 bytes: icmp_seq=3 ttl=64 tiempo=0.401 ms\n\n3 paquetes transmitidos, 3 recibidos, 0 % perdidos` };
+    case 'curl':
+      if ((args[0] || '').includes('liquidos.local')) {
+        return { text: '<!doctype html>\n<title>LiquidOS</title>\n<h1>Bienvenido a LiquidOS</h1>\n<p>Tu escritorio, fluido y silencioso.</p>' };
+      }
+      return { text: `curl: (6) no se pudo resolver el host «${args[0] || ''}»` };
+
+    case 'history':
+      return { text: termHistory.map((c, i) => `${String(i + 1).padStart(3)}  ${c}`).join('\n') || 'Sin comandos todavía' };
+
+    case 'open': {
+      const target = (args[0] || '').toLowerCase();
+      const map = { archivos: 'archivos', firefox: 'navegador', navegador: 'navegador', thunderbird: 'correo', correo: 'correo', software: 'software', notas: 'notas', musica: 'musica', música: 'musica', terminal: 'terminal', ajustes: 'ajustes' };
+      if (map[target]) { openApp(map[target]); return { text: `Abriendo ${target}…` }; }
+      return { text: `open: ${target || ''}: aplicación desconocida` };
+    }
+
+    case 'theme':
+      if (args[0] === 'light' || args[0] === 'dark') { setTheme(args[0]); return { text: `Tema cambiado a ${args[0]}` }; }
+      return { text: 'Uso: theme light|dark' };
+
+    case 'accent': {
+      const acc = ACCENTS.find((a) => a.id === args[0] || a.color === args[0]);
+      if (!acc) return { text: 'Uso: accent ' + ACCENTS.map((a) => a.id).join('|') };
+      setPref('accent', acc.color, `Color de acento: ${acc.name}`);
+      return { text: `Color de acento: ${acc.name}` };
+    }
+
+    case 'wallpaper': {
+      const wall = WALLS.find((w) => w.id === args[0]);
+      if (!wall) return { text: 'Uso: wallpaper ' + WALLS.map((w) => w.id).join('|') };
+      setPref('wall', wall.id, `Fondo: ${wall.name}`);
+      return { text: `Fondo de pantalla: ${wall.name}` };
+    }
+
+    case 'apt': return { text: termApt(args) };
+    case 'liquidos': return { text: termLiquidos(args) };
+
+    case 'flatpak': {
+      const sub = (args[0] || '').toLowerCase();
+      if (sub === 'remotes') return { text: 'flathub\thttps://dl.flathub.org/repo/\n  Sistema\n  Prioridad 1' };
+      if (sub === 'install') {
+        const ref = args.slice(1).join(' ');
+        const app = CATALOG.find((c) => ref.toLowerCase().includes(c.id) || ref.toLowerCase().includes(c.name.toLowerCase().replace(/\s/g, '')));
+        if (app) {
+          if (!state.software.installed.includes(app.id)) state.software.installed.push(app.id);
+          if (state.open.has('software')) rerenderWindow('software');
+          return { text: `Buscando coincidencias…\nInstalando ${app.id} desde flathub\n  ████████████████████ 100 %\nInstalación completa.` };
+        }
+        return { text: `error: No se encontró «${ref}» en Flathub` };
+      }
+      if (sub === 'list') {
+        return { text: state.software.installed.map((id) => (swItem(id) || {}).name).filter(Boolean).map((n) => `${n}\tstable`).join('\n') };
+      }
+      return { text: 'Uso: flatpak <list|install|remotes> [ref]' };
+    }
+
+    case 'clear':
+    case 'exit':
+      return null;
+
+    default:
+      return { text: `zsh: no se encontró la orden: ${cmd}\nPrueba con «help» para ver los comandos disponibles.` };
+  }
+}
+
+function termPipeline(seg) {
+  let body = seg;
+  let redirect = null;
+  let append = false;
+
+  const redir = seg.match(/^(.*?)\s*(>>?)\s*([^\s|]+)\s*$/);
+  if (redir && !seg.includes('|')) {
+    body = redir[1].trim();
+    append = redir[2] === '>>';
+    redirect = redir[3];
+  }
+
+  const stages = body.split('|').map((s) => s.trim()).filter(Boolean);
+  let text = null;
+  let html = null;
+
+  for (const stage of stages) {
+    const res = termStage(stage, text);
+    if (res === null) return null;
+    if (!res) continue;
+    if (res.html) { html = res.html; text = ''; continue; }
+    text = res.text ?? '';
+    html = null;
+  }
+
+  if (redirect) {
+    const path = termAbs(redirect);
+    if (!termWrite(path, text ?? '', append)) {
+      return { text: `zsh: no existe el directorio para «${redirect}»` };
+    }
+    toast(`Escrito en ${termDisplay(path)}`, 1200);
+    return {};
+  }
+
+  if (html) return { html };
+  return { text: text ?? '' };
 }
 
 function termRun(win, raw) {
   const out = win.querySelector('[data-term-out]');
   if (!out) return;
-  const cmd = raw.trim();
-  const echo = `<div class="term-line"><span class="prompt">sebas@liquidos</span>:<span class="d">~</span>$ ${escapeHtml(raw)}</div>`;
 
-  if (cmd) {
-    if (termHistory[termHistory.length - 1] !== cmd) termHistory.push(cmd);
-    termHistIndex = termHistory.length;
+  termPrint(out, termLine(`${termPromptHtml()} ${escapeHtml(raw)}`));
+
+  const line = raw.trim();
+  if (!line) { updateTermPrompt(win); return; }
+
+  if (termHistory[termHistory.length - 1] !== line) termHistory.push(line);
+  termHistIndex = termHistory.length;
+
+  const parts = line.split('&&').map((s) => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    if (part === 'exit' || part === 'logout') { closeWin('terminal'); return; }
+    if (part === 'clear' || part === 'cls') { out.innerHTML = ''; return; }
+    const res = termPipeline(part);
+    if (res === null) return;
+    if (!res) continue;
+    if (res.html) termPrint(out, res.html);
+    else if (res.text) termPrint(out, termLine(termText(res.text)));
   }
 
-  let res = '';
-  const [base, ...args] = cmd.split(/\s+/);
-  switch ((base || '').toLowerCase()) {
-    case '':
-      break;
-    case 'help':
-      res = TERM_HELP;
-      break;
-    case 'neofetch':
-      res = NEOFETCH_BLOCK;
-      break;
-    case 'ls':
-      res = 'Documentos  Imágenes  Música  Descargas  Proyectos  Capturas  <span class="d">preview/</span>  <span class="d">build/</span>';
-      break;
-    case 'cat':
-      res = args[0] === '/etc/os-release' ? OS_RELEASE : `cat: ${escapeHtml(args[0] || '')}: No such file or directory`;
-      break;
-    case 'clear':
-      out.innerHTML = '';
-      return;
-    case 'date':
-      res = escapeHtml(new Date().toLocaleString('es-ES'));
-      break;
-    case 'whoami':
-      res = 'sebas';
-      break;
-    case 'pwd':
-      res = '/home/sebas';
-      break;
-    case 'hostname':
-      res = 'liquidos';
-      break;
-    case 'uname':
-      res = 'Linux liquidos 6.1.0-liquidos-amd64 #1 SMP Debian 6.1 x86_64 GNU/Linux';
-      break;
-    case 'uptime':
-      res = ' 09:41:00 up 12 min, 1 user, load average: 0,42, 0,31, 0,18';
-      break;
-    case 'echo':
-      res = escapeHtml(args.join(' '));
-      break;
-    case 'history':
-      res = termHistory.map((c, i) => `${String(i + 1).padStart(3)}  ${escapeHtml(c)}`).join('<br>');
-      break;
-    case 'open': {
-      const target = (args[0] || '').toLowerCase();
-      const map = { archivos: 'archivos', navegador: 'navegador', correo: 'correo', notas: 'notas', musica: 'musica', ajustes: 'ajustes' };
-      if (map[target]) { openApp(map[target]); res = `Abriendo ${target}…`; }
-      else res = `open: ${escapeHtml(target || '')}: aplicación desconocida`;
-      break;
-    }
-    case 'theme':
-      if (args[0] === 'light' || args[0] === 'dark') { setTheme(args[0]); res = `Tema cambiado a ${args[0]}`; }
-      else res = 'Uso: theme light|dark';
-      break;
-    case 'about':
-      openAbout();
-      break;
-    case 'sudo':
-      res = 'sebas no está en el archivo sudoers. Este incidente será reportado. (demo)';
-      break;
-    case 'exit':
-      closeWin('terminal');
-      return;
-    default:
-      res = `zsh: no se encontró la orden: ${escapeHtml(base)}`;
+  updateTermPrompt(win);
+}
+
+function termComplete(input) {
+  const parts = input.split(' ');
+  const last = parts[parts.length - 1];
+  let pool = [];
+
+  if (parts.length === 1) {
+    pool = TERM_COMMANDS;
+  } else {
+    const dir = last.includes('/') ? termAbs(last.slice(0, last.lastIndexOf('/') + 1)) : termCwd;
+    const base = last.includes('/') ? last.slice(last.lastIndexOf('/') + 1) : last;
+    pool = (termList(dir) || []).filter((it) => it.name.startsWith(base)).map((it) => it.name);
   }
 
-  out.insertAdjacentHTML('beforeend', echo + (res ? `<div class="term-line">${res}</div>` : ''));
-  out.scrollTop = out.scrollHeight;
+  const hits = pool.filter((c) => c.startsWith(last));
+  if (!hits.length) return input;
+  if (hits.length === 1) {
+    parts[parts.length - 1] = hits[0];
+    return parts.join(' ') + ' ';
+  }
+  return input;
 }
 
 function wireTerminal(win) {
@@ -1531,6 +2614,7 @@ function wireTerminal(win) {
   const term = win.querySelector('[data-term]');
   if (!input || !term) return;
 
+  updateTermPrompt(win);
   term.addEventListener('click', () => input.focus());
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -1546,6 +2630,18 @@ function wireTerminal(win) {
       e.preventDefault();
       termHistIndex = Math.min(termHistory.length, termHistIndex + 1);
       input.value = termHistory[termHistIndex] || '';
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      input.value = termComplete(input.value);
+    } else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+      e.preventDefault();
+      const out = win.querySelector('[data-term-out]');
+      if (out) out.innerHTML = '';
+    } else if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      const out = win.querySelector('[data-term-out]');
+      if (out) termPrint(out, termLine(`${termPromptHtml()} ${escapeHtml(input.value)}`));
+      input.value = '';
     }
   });
 
@@ -1557,6 +2653,7 @@ function wireTerminal(win) {
 const SETTINGS_SECTIONS = [
   { id: 'wifi', label: 'Wi-Fi', glyph: 'wifi' },
   { id: 'apariencia', label: 'Apariencia', glyph: 'settings' },
+  { id: 'personalizacion', label: 'Personalización', glyph: 'palette' },
   { id: 'dock', label: 'Escritorio y Dock', glyph: 'desktop' },
   { id: 'sonido', label: 'Sonido', glyph: 'music' },
   { id: 'pantalla', label: 'Pantalla', glyph: 'clock' }
@@ -1600,6 +2697,65 @@ function settingsPanel(sec) {
           </button>`).join('')}
       </div>
       <p class="hint">Haz clic en una red para conectarte.</p>`;
+  }
+
+  if (sec === 'personalizacion') {
+    const p = state.prefs;
+    return `
+      <h3>Personalización</h3>
+      <p class="sub">Haz que LiquidOS se sienta tuyo. Los cambios se guardan en este navegador.</p>
+
+      <h3 class="sub-title">Color de acento</h3>
+      <div class="swatches">
+        ${ACCENTS.map((a) => `
+          <button class="swatch ${p.accent === a.color ? 'on' : ''}" data-accent="${a.color}" title="${a.name}" aria-label="${a.name}" style="--c:${a.color}"><span></span></button>`).join('')}
+      </div>
+
+      <h3 class="sub-title">Fondo de pantalla</h3>
+      <div class="wall-grid">
+        ${WALLS.map((w) => `
+          <button class="wall-thumb ${p.wall === w.id ? 'on' : ''}" data-wall="${w.id}" title="${w.name}" data-wall-preview="${w.id}">
+            <span></span><small>${w.name}</small>
+          </button>`).join('')}
+      </div>
+
+      <h3 class="sub-title">Dock</h3>
+      <div class="row">
+        <div><b>Posición</b><small>Abajo, izquierda o derecha</small></div>
+        <div class="seg2">
+          <button data-dockpos="bottom" class="${p.dockPos === 'bottom' ? 'on' : ''}">Abajo</button>
+          <button data-dockpos="left" class="${p.dockPos === 'left' ? 'on' : ''}">Izquierda</button>
+          <button data-dockpos="right" class="${p.dockPos === 'right' ? 'on' : ''}">Derecha</button>
+        </div>
+      </div>
+      <div class="range-row">
+        <label>Tamaño de los iconos del escritorio <output>${p.deskSize} px</output></label>
+        <input type="range" min="36" max="72" value="${p.deskSize}" data-range="deskSize" aria-label="Iconos del escritorio">
+      </div>
+
+      <h3 class="sub-title">Ventanas</h3>
+      <div class="row">
+        <div><b>Botones de ventana</b><small>A la izquierda, como macOS, o a la derecha</small></div>
+        <div class="seg2">
+          <button data-buttons="left" class="${p.buttons === 'left' ? 'on' : ''}">Izquierda</button>
+          <button data-buttons="right" class="${p.buttons === 'right' ? 'on' : ''}">Derecha</button>
+        </div>
+      </div>
+      <div class="range-row">
+        <label>Radio de las esquinas <output>${p.radius} px</output></label>
+        <input type="range" min="0" max="24" value="${p.radius}" data-range="radius" aria-label="Radio de las esquinas">
+      </div>
+
+      <h3 class="sub-title">Efectos</h3>
+      <div class="row">
+        <div><b>Transparencia</b><small>Desenfoque del Dock, los menús y las ventanas</small></div>
+        <button class="switch ${p.blur ? 'on' : ''}" data-sys="blur" aria-label="Transparencia"></button>
+      </div>
+
+      <div class="mail-actions">
+        <button class="btn" data-reset-look="1">Restablecer apariencia</button>
+      </div>
+      <p class="hint">Consejo: también puedes cambiar el acento desde la terminal con <b>accent verde</b>.</p>`;
   }
 
   if (sec === 'dock') {
@@ -1764,10 +2920,21 @@ function wireSettings(win) {
       if (key === 'dockSize') {
         s.dockSize = val;
         applyDockSize();
+        savePrefs();
+      }
+      if (key === 'deskSize') {
+        state.prefs.deskSize = val;
+        applyPrefs();
+        savePrefs();
+      }
+      if (key === 'radius') {
+        state.prefs.radius = val;
+        applyPrefs();
+        savePrefs();
       }
       paintRange(range);
       const out = range.closest('.range-row')?.querySelector('output');
-      if (out) out.textContent = key === 'dockSize' ? `${val} px` : `${val} %`;
+      if (out) out.textContent = key === 'dockSize' || key === 'deskSize' || key === 'radius' ? `${val} px` : `${val} %`;
       syncControlCenter();
     });
   });
@@ -1814,6 +2981,37 @@ function wireSettings(win) {
 
   const test = $('[data-test-sound]', body);
   if (test) test.addEventListener('click', () => beep(660));
+
+  $$('[data-accent]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const acc = ACCENTS.find((a) => a.color === btn.dataset.accent);
+      setPref('accent', btn.dataset.accent, `Color de acento: ${acc ? acc.name : 'personalizado'}`);
+      beep(620);
+    });
+  });
+
+  $$('[data-wall]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const wall = WALLS.find((w) => w.id === btn.dataset.wall);
+      setPref('wall', btn.dataset.wall, `Fondo: ${wall ? wall.name : btn.dataset.wall}`);
+    });
+  });
+
+  $$('[data-dockpos]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const names = { bottom: 'abajo', left: 'a la izquierda', right: 'a la derecha' };
+      setPref('dockPos', btn.dataset.dockpos, `Dock ${names[btn.dataset.dockpos]}`);
+    });
+  });
+
+  $$('[data-buttons]', body).forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setPref('buttons', btn.dataset.buttons, btn.dataset.buttons === 'left' ? 'Botones a la izquierda' : 'Botones a la derecha');
+    });
+  });
+
+  const reset = $('[data-reset-look]', body);
+  if (reset) reset.addEventListener('click', () => resetPrefs());
 }
 
 /* ------------------------ Estado del sistema ------------------------ */
@@ -1925,6 +3123,12 @@ function toggleSystem(key) {
       s.lowPower = !s.lowPower;
       if (s.lowPower) s.brightness = Math.min(s.brightness, 60);
       toast(`Bajo consumo ${s.lowPower ? 'activado' : 'desactivado'}`);
+      break;
+    case 'blur':
+      state.prefs.blur = !state.prefs.blur;
+      applyPrefs();
+      savePrefs();
+      toast(`Transparencia ${state.prefs.blur ? 'activada' : 'desactivada'}`);
       break;
     case 'mag':
       state.mag = !state.mag;
@@ -2130,12 +3334,29 @@ function searchTargets() {
       setTheme(state.theme === 'dark' ? 'light' : 'dark');
       toast(`Apariencia ${state.theme === 'dark' ? 'oscura' : 'clara'}`);
     } },
+    { id: 'tienda', name: 'Centro de software', glyph: 'store', c1: '#8fd4ff', c2: '#3b6fd8', hint: 'Aplicaciones', run: () => openApp('software') },
+    { id: 'personalizar', name: 'Personalizar el escritorio', glyph: 'palette', c1: '#8fd4c8', c2: '#2b9080', hint: 'Ajustes', run: () => openApp('ajustes', { section: 'personalizacion' }) },
     { id: 'manual', name: 'Manual de LiquidOS', glyph: 'doc', c1: '#7cc3ff', c2: '#3b6fd8', hint: 'Ayuda', run: () => openManual() },
     { id: 'ayuda', name: 'Atajos de teclado', glyph: 'grid', c1: '#8fd4c8', c2: '#2b9080', hint: 'Ayuda', run: () => openShortcuts() },
     { id: 'acerca', name: 'Acerca de LiquidOS', glyph: 'doc', c1: '#9cc6ff', c2: '#3b6fd8', hint: 'Sistema', run: () => openAbout() },
     { id: 'capturas', name: 'Capturas', glyph: 'image', c1: '#ffd48f', c2: '#f09a3c', hint: 'Carpeta', run: () => openApp('archivos', { path: 'capturas' }) },
     { id: 'papelera', name: 'Papelera', glyph: 'trash', c1: '#b8c6db', c2: '#7d8ba1', hint: 'Sistema', run: () => toast('La papelera está vacía · 0 elementos') }
   ];
+
+  CATALOG.filter((it) => !state.software.installed.includes(it.id)).forEach((it) => {
+    extras.push({
+      id: `install-${it.id}`,
+      name: `Instalar ${it.name}`,
+      glyph: it.glyph,
+      c1: it.c1,
+      c2: it.c2,
+      hint: 'Centro de software',
+      run: () => {
+        openApp('software');
+        softwareInstall(it.id);
+      }
+    });
+  });
 
   const files = [];
   Object.entries(FS).forEach(([path, dir]) => {
@@ -2216,6 +3437,7 @@ function wireWindow(id, win) {
     case 'archivos': wireFinder(win); break;
     case 'navegador': wireBrowser(win); break;
     case 'correo': wireMail(win); break;
+    case 'software': wireSoftware(win); break;
     case 'notas': wireNotes(win); break;
     case 'musica': wireMusic(win); break;
     case 'terminal': wireTerminal(win); break;
@@ -2905,6 +4127,7 @@ function setupBoot() {
 
 /* ---------------------------- Init ---------------------------- */
 
+loadPrefs();
 buildDock();
 buildDesktopIcons();
 setupMenus();
@@ -2912,7 +4135,8 @@ setupControlCenter();
 setupClock();
 setupHotzone();
 setupBoot();
-setTheme('dark');
+setTheme(state.theme);
+applyPrefs();
 applySystemClasses();
 syncControlCenter();
 renderSpotResults('');

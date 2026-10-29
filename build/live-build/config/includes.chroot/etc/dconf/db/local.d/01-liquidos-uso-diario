@@ -1,0 +1,39 @@
+# ============================================================
+# LiquidOS — ajustes pensados para el uso diario
+# ============================================================
+
+# Sonido y notificaciones
+[org/gnome/desktop/sound]
+event-sounds=true
+input-feedback-sounds=false
+
+[org/gnome/desktop/notifications]
+show-banners=true
+show-in-lock-screen=true
+
+# Accesibilidad cómoda sin estorbar
+[org/gnome/desktop/interface]
+text-scaling-factor=1.0
+locate-pointer=false
+font-antialiasing='grayscale'
+font-hinting='slight'
+
+# Búsqueda: incluir archivos, calendario y contactos
+[org/gnome/desktop/search-providers]
+disable-external=false
+
+# Energía: comportamiento en portátiles
+[org/gnome/settings-daemon/plugins/power]
+idle-dim=true
+
+# Nautilus: ordenar carpetas primero y mostrar el tamaño real
+[org/gnome/nautilus/preferences]
+sort-directories-first=true
+show-create-link=true
+show-delete-permanently=true
+default-folder-viewer='icon-view'
+
+# Gestor de archivos: vista cómoda por defecto
+[org/gtk/gtk4/settings/file-chooser]
+show-hidden=false
+sort-directories-first=true

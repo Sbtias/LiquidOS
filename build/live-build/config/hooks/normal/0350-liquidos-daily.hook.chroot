@@ -1,0 +1,236 @@
+#!/bin/bash
+# ============================================================
+# LiquidOS — preparación para uso cotidiano
+#   · Firefox y Thunderbird listos y como predeterminados
+#   · Flathub disponible desde el Centro de software
+#   · Comando `liquidos` en la terminal
+# ============================================================
+set -uo pipefail
+export DEBIAN_FRONTEND=noninteractive
+
+echo "[LiquidOS] Preparando el sistema para uso diario"
+
+# ------------------------------------------------------------
+# 1. Navegador y correo: preinstalados y predeterminados
+# ------------------------------------------------------------
+
+# `firefox-esr` es Firefox (canal ESR). Añadimos el alias corto
+# `firefox` para que la terminal se sienta como en casa.
+if [ -x /usr/bin/firefox-esr ]; then
+    cat > /usr/local/bin/firefox <<'EOF'
+#!/bin/sh
+exec /usr/bin/firefox-esr "$@"
+EOF
+    chmod 0755 /usr/local/bin/firefox
+
+    DESK=/usr/share/applications/firefox-esr.desktop
+    if [ -f "$DESK" ]; then
+        sed -i 's/^Name=.*/Name=Firefox/; s/^Name\[es\]=.*/Name[es]=Firefox/' "$DESK" || true
+        sed -i 's/^GenericName=.*/GenericName=Navegador web/' "$DESK" || true
+    fi
+    echo "[LiquidOS] Firefox listo"
+else
+    echo "[LiquidOS] aviso: firefox-esr no está instalado"
+fi
+
+if [ -x /usr/bin/thunderbird ]; then
+    echo "[LiquidOS] Thunderbird listo"
+else
+    echo "[LiquidOS] aviso: thunderbird no está instalado"
+fi
+
+# Aplicaciones predeterminadas para todo el sistema.
+mkdir -p /etc/xdg
+cat > /etc/xdg/mimeapps.list <<'EOF'
+[Default Applications]
+text/html=firefox-esr.desktop
+x-scheme-handler/http=firefox-esr.desktop
+x-scheme-handler/https=firefox-esr.desktop
+x-scheme-handler/mailto=thunderbird.desktop
+application/x-extension-htm=firefox-esr.desktop
+application/x-extension-html=firefox-esr.desktop
+application/x-extension-xhtml=firefox-esr.desktop
+application/xhtml+xml=firefox-esr.desktop
+application/pdf=org.gnome.Evince.desktop
+image/png=org.gnome.Loupe.desktop;org.gnome.eog.desktop;
+image/jpeg=org.gnome.Loupe.desktop;org.gnome.eog.desktop;
+video/mp4=vlc.desktop;
+audio/mpeg=vlc.desktop;
+text/plain=org.gnome.TextEditor.desktop;
+inode/directory=org.gnome.Nautilus.desktop;
+EOF
+
+# Alternativas del sistema (navegador web y cliente de correo).
+update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/firefox-esr 200 >/dev/null 2>&1 || true
+update-alternatives --set x-www-browser /usr/bin/firefox-esr >/dev/null 2>&1 || true
+update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /usr/bin/firefox-esr 200 >/dev/null 2>&1 || true
+update-alternatives --set gnome-www-browser /usr/bin/firefox-esr >/dev/null 2>&1 || true
+update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+
+# ------------------------------------------------------------
+# 2. Tienda de software: Flathub + GNOME Software
+# ------------------------------------------------------------
+
+if command -v flatpak >/dev/null 2>&1; then
+    flatpak remote-add --system --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo >/dev/null 2>&1 \
+        && echo "[LiquidOS] Flathub añadido" \
+        || echo "[LiquidOS] aviso: no se pudo añadir Flathub (sin red en la compilación)"
+fi
+
+# Que GNOME Software muestre también los paquetes Debian.
+mkdir -p /etc/PackageKit
+cat > /etc/PackageKit/PackageKit.conf <<'EOF'
+# LiquidOS — la tienda puede instalar paquetes Debian y Flatpaks
+WritePreparedUpdates=true
+OnlyTrusted=true
+UseNetwork=true
+EOF
+
+# ------------------------------------------------------------
+# 3. Comando `liquidos` para la terminal
+# ------------------------------------------------------------
+
+cat > /usr/local/bin/liquidos <<'SCRIPT'
+#!/bin/bash
+# LiquidOS — utilidades del sistema desde la terminal.
+# Uso: liquidos <comando>
+set -uo pipefail
+
+VERDE=$'\e[38;5;114m'; AZUL=$'\e[38;5;75m'; GRIS=$'\e[38;5;244m'; ROJO=$'\e[38;5;203m'; FIN=$'\e[0m'
+
+ayuda() {
+    cat <<'EOF'
+LiquidOS · utilidades del sistema
+
+  liquidos info              Resumen del equipo y del sistema
+  liquidos apps              Aplicaciones instaladas
+  liquidos search <texto>    Buscar paquetes en los repositorios
+  liquidos install <paquete> Instalar uno o varios paquetes
+  liquidos remove <paquete>  Desinstalar paquetes
+  liquidos update            Actualizar el sistema
+  liquidos store             Abrir el Centro de software
+  liquidos flatpak <args>    Usar Flatpak (Flathub)
+  liquidos theme [dark|light] Cambiar entre modo oscuro y claro
+  liquidos wallpaper <img>   Poner una imagen como fondo
+  liquidos doctor            Comprobar el estado del sistema
+  liquidos report            Generar un informe para soporte
+
+Atajos: firefox, thunderbird, nautilus, gnome-terminal, code (si está instalado).
+EOF
+}
+
+info() {
+    echo -e "${AZUL}LiquidOS${FIN} 1.0 «Torrente»"
+    echo -e "${GRIS}────────────────────────────────────────${FIN}"
+    . /etc/os-release 2>/dev/null
+    echo -e "  Sistema      ${VERDE}${PRETTY_NAME:-LiquidOS}${FIN}"
+    echo -e "  Kernel       $(uname -r)"
+    echo -e "  Escritorio   ${XDG_CURRENT_DESKTOP:-GNOME}"
+    echo -e "  Sesión       ${XDG_SESSION_TYPE:-wayland}"
+    echo -e "  Navegador    $(update-alternatives --query x-www-browser 2>/dev/null | awk -F': ' '/Value:/{print $2}' || echo firefox-esr)"
+    echo -e "  CPU          $(awk -F': ' '/model name/{print $2; exit}' /proc/cpuinfo)"
+    echo -e "  Memoria      $(free -h | awk '/Mem:/{print $3" de "$2}')"
+    echo -e "  Disco        $(df -h / | awk 'NR==2{print $3" de "$2" ("$5" usado)"}')"
+    [ -n "${DISPLAY:-}" ] && echo -e "  Pantalla     ${DISPLAY}"
+}
+
+apps() {
+    echo -e "${AZUL}Aplicaciones instaladas${FIN}"
+    for f in /usr/share/applications/*.desktop; do
+        n=$(awk -F= '/^Name=/{print $2; exit}' "$f" 2>/dev/null)
+        [ -n "${n:-}" ] && echo "  · $n"
+    done | sort -u
+}
+
+doctor() {
+    echo -e "${AZUL}Comprobando LiquidOS…${FIN}"
+    ok()   { echo -e "  ${VERDE}✔${FIN} $1"; }
+    mal()  { echo -e "  ${ROJO}✘${FIN} $1"; }
+
+    command -v firefox-esr >/dev/null && ok "Firefox instalado" || mal "Firefox no encontrado"
+    command -v thunderbird >/dev/null && ok "Thunderbird instalado" || mal "Thunderbird no encontrado"
+    command -v flatpak >/dev/null && ok "Flatpak disponible" || mal "Flatpak no instalado"
+    flatpak remotes 2>/dev/null | grep -q flathub && ok "Flathub configurado" || mal "Flathub no configurado"
+    command -v pactl >/dev/null && pactl info >/dev/null 2>&1 && ok "Audio funcionando" || mal "Sin servidor de audio"
+    command -v nmcli >/dev/null && nmcli -t -f STATE general >/dev/null 2>&1 && ok "NetworkManager activo" || mal "NetworkManager inactivo"
+    if ping -c1 -W2 1.1.1.1 >/dev/null 2>&1; then ok "Conexión a Internet"; else mal "Sin conexión a Internet"; fi
+    [ "$(df --output=pcent / | tail -1 | tr -dc '0-9')" -lt 90 ] 2>/dev/null && ok "Espacio en disco suficiente" || mal "Poco espacio en disco"
+    command -v dconf >/dev/null && ok "dconf disponible" || mal "dconf no encontrado"
+}
+
+report() {
+    local f="/tmp/liquidos-report-$(date +%Y%m%d-%H%M).txt"
+    {
+        echo "LiquidOS — informe del sistema"
+        echo "Fecha: $(date -Is)"
+        echo
+        info
+        echo
+        doctor
+        echo
+        echo "Últimos errores del núcleo:"
+        dmesg --level=err,warn 2>/dev/null | tail -20 || echo "  (sin acceso a dmesg)"
+    } > "$f"
+    echo -e "${VERDE}Informe guardado en:${FIN} $f"
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+    help|-h|--help) ayuda ;;
+    info) info ;;
+    apps|app) apps ;;
+    search) apt-cache search "$@" | head -40 ;;
+    install) sudo apt install "$@" ;;
+    remove|uninstall) sudo apt remove "$@" ;;
+    update) sudo apt update && sudo apt full-upgrade ;;
+    store) gnome-software & ;;
+    flatpak) flatpak "$@" ;;
+    theme)
+        case "${1:-}" in
+            dark)  gsettings set org.gnome.desktop.interface color-scheme prefer-dark;  echo "Modo oscuro activado" ;;
+            light) gsettings set org.gnome.desktop.interface color-scheme prefer-light; echo "Modo claro activado" ;;
+            *) echo "Uso: liquidos theme dark|light" ;;
+        esac ;;
+    wallpaper)
+        img="${1:-}"
+        if [ -z "$img" ] || [ ! -f "$img" ]; then echo "Uso: liquidos wallpaper /ruta/imagen.jpg"; exit 1; fi
+        uri="file://$(readlink -f "$img")"
+        gsettings set org.gnome.desktop.background picture-uri "$uri"
+        gsettings set org.gnome.desktop.background picture-uri-dark "$uri"
+        echo "Fondo actualizado: $img" ;;
+    doctor) doctor ;;
+    report|reporte) report ;;
+    *) echo "Comando desconocido: $cmd"; echo; ayuda; exit 1 ;;
+esac
+SCRIPT
+chmod 0755 /usr/local/bin/liquidos
+
+# Atajo `liquidos-report` (aparece citado en el correo de bienvenida).
+cat > /usr/local/bin/liquidos-report <<'EOF'
+#!/bin/sh
+exec /usr/local/bin/liquidos report
+EOF
+chmod 0755 /usr/local/bin/liquidos-report
+
+# ------------------------------------------------------------
+# 4. Alias cómodos para la shell
+# ------------------------------------------------------------
+
+if [ -f /etc/skel/.zshrc ]; then
+    cat >> /etc/skel/.zshrc <<'EOF'
+
+# --- LiquidOS: atajos de uso diario ---
+alias actualizar='liquidos update'
+alias tienda='liquidos store'
+alias estado='liquidos doctor'
+alias instalar='sudo apt install'
+alias buscar='apt-cache search'
+alias navegador='firefox'
+alias correo='thunderbird'
+alias docs='nautilus ~/Documentos'
+alias descargas='nautilus ~/Descargas'
+EOF
+fi
+
+echo "[LiquidOS] Listo: Firefox, Thunderbird, Flathub y comando liquidos"

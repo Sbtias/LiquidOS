@@ -30,6 +30,28 @@ usbutils
 lm-sensors
 rsync
 
+# --- Terminal de uso diario (herramientas reales) ---
+tmux
+tree
+ripgrep
+fd-find
+bat
+fzf
+ncdu
+jq
+p7zip-full
+ffmpeg
+python3-pip
+python3-venv
+openssh-client
+net-tools
+dnsutils
+traceroute
+nmap
+neofetch
+xdg-utils
+gnome-sushi
+
 # --- GNOME / shell ---
 gnome-shell
 gnome-shell-extensions
@@ -97,18 +119,29 @@ gir1.2-gtk-3.0
 gir1.2-adw-1
 
 # --- Aplicaciones ---
+# Navegador y correo vienen preinstalados: no hace falta instalar nada
+# para navegar, leer el correo o trabajar.
 firefox-esr
+firefox-esr-l10n-es
 thunderbird
+thunderbird-l10n-es
 libreoffice-gtk3
 libreoffice-writer
 libreoffice-calc
 libreoffice-impress
+libreoffice-draw
+libreoffice-l10n-es
+hunspell-es
+hyphen-es
+mythes-es
 vlc
 gimp
 shotwell
 simple-scan
 gnome-calendar
 gnome-clocks
+gnome-weather
+gnome-contacts
 gnome-maps
 cheese
 evince

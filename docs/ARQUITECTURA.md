@@ -45,6 +45,8 @@ Una única lista declara todo el software. Reglas:
 - Nada de paquetes propietarios en la ISO; el firmware no libre queda fuera por defecto.
 - Las apps "grandes" (LibreOffice, GIMP, VLC) están en la lista para que la ISO sea usable
   sin conexión; la futura edición *Lite* las quitará.
+- **Firefox (ESR) y Thunderbird** son parte de la base: no hay que instalar un navegador ni un
+  cliente de correo tras el primer arranque.
 
 ### 3.2 Identidad (`hooks/normal/0100-*`)
 
@@ -70,7 +72,8 @@ lista de extensiones activas para que GNOME no muestre errores.
 
 El fichero `00-liquidos` es la **fuente de verdad del aspecto**. Se aplica a nivel de sistema
 (no en `~/.config`), por lo que vale para cualquier usuario nuevo y para el instalador.
-Los usuarios pueden cambiarlo: no hay bloqueos (`locks/`) a propósito.
+`01-liquidos-uso-diario` añade los valores cómodos para el día a día (sonidos, notificaciones,
+Nautilus, energía, búsqueda). Los usuarios pueden cambiarlo: no hay bloqueos (`locks/`) a propósito.
 
 ### 3.6 Branding de arranque
 
@@ -90,6 +93,23 @@ Configuración en `etc/calamares` y branding en `/usr/share/calamares/branding/l
 Instala el sistema copiando el squashfs (`unpackfs`) y configura GRUB, locale, usuarios y Plymouth.
 **Estado experimental**: falta probar el ciclo completo en UEFI y BIOS.
 
+### 3.9 Uso diario (`hooks/normal/0350-*`)
+
+Este hook prepara la distro para no tener que configurar nada al arrancar:
+
+- Alias `/usr/local/bin/firefox` → `firefox-esr` y renombrado de la entrada `.desktop` a
+  «Firefox». `update-alternatives` deja Firefox como `x-www-browser` y `gnome-www-browser`.
+- `/etc/xdg/mimeapps.list` fija Firefox para `http`, `https`, HTML y PDF, y Thunderbird para
+  `mailto:`.
+- `flatpak remote-add --system flathub` para que **GNOME Software** tenga catálogo amplio.
+  Si la compilación no tiene red, el hook avisa y continúa: la ISO sigue siendo válida.
+- `/usr/local/bin/liquidos` (más `liquidos-report`) con `info`, `apps`, `search`, `install`,
+  `remove`, `update`, `store`, `flatpak`, `theme`, `wallpaper`, `doctor` y `report`.
+- Alias de zsh en `/etc/skel/.zshrc` (`actualizar`, `tienda`, `estado`, `navegador`, `correo`…).
+
+La vista previa web reproduce estas mismas funciones en `preview/app.js` (Centro de software,
+shell virtual y panel de personalización) para poder probarlas sin compilar la ISO.
+
 ## 4. Decisiones y alternativas descartadas
 
 | Decisión | Por qué | Alternativa descartada |
@@ -100,6 +120,9 @@ Instala el sistema copiando el squashfs (`unpackfs`) y configura GRUB, locale, u
 | WhiteSur | Mantenido, cubre GTK3/4, iconos, cursores y shell | Tema propio desde cero (meses de trabajo) |
 | dconf de sistema | Un solo sitio para el look; sobrevive a usuarios nuevos | `gsettings` por usuario (frágil, no escala) |
 | zstd en squashfs | Compila 3–4× más rápido que xz con tamaño similar | xz (ISO algo más pequeña, build mucho más lento) |
+| Firefox ESR de Debian | Cero claves/repos externos, actualizaciones por seguridad de Debian | PPA/repositorio APT de Mozilla (más frágil en una ISO) |
+| GNOME Software + Flathub | Tienda gráfica sin desarrollar una propia; apps fuera de Debian | Tienda propia (mucho mantenimiento) |
+| `liquidos` en `/usr/local/bin` | Automatiza lo cotidiano sin depender de la tienda | Solo documentación de comandos |
 
 ## 5. Seguridad y privacidad
 
@@ -118,3 +141,5 @@ Instala el sistema copiando el squashfs (`unpackfs`) y configura GRUB, locale, u
    un usuario creado antes de esa copia verá Adwaita.
 4. Sin repositorio APT propio: `apt upgrade` actualiza a Debian, no a "LiquidOS 1.1".
 5. Secure Boot usa el shim firmado de Debian, no uno propio.
+6. El Centro de software necesita red la primera vez que se usa Flathub; la ISO se compila sin
+   descargar aplicaciones Flatpak para no crecer de más.

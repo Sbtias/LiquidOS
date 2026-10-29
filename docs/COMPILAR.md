@@ -131,6 +131,22 @@ Sin KVM (Windows/macOS): quita `-enable-kvm` y añade `-accel tcg`.
 
 Crea una VM Debian 12 x64 y monta la ISO como CD. UEFI está incluido en la ISO.
 
+### Lista de comprobación (uso diario)
+
+Con la ISO arrancada, en 5 minutos:
+
+1. El Dock muestra **Firefox**, **Thunderbird**, Archivos, Terminal, **Centro de software** y Ajustes.
+2. Firefox abre con doble clic y `xdg-open https://debian.org` (o un enlace del correo) usa Firefox.
+3. Thunderbird abre desde el Dock y responde a `mailto:`.
+4. **Centro de software** → *Instalar* una app de Flathub; si no hay red, al menos debe listar
+   las aplicaciones Debian y no quedarse en blanco.
+5. Terminal: `liquidos info`, `liquidos doctor`, `sudo apt update`, `neofetch`.
+6. **Ajustes → Personalización**: cambia acento, fondo, posición del Dock y transparencia;
+   cierra la sesión y comprueba que se mantiene.
+7. `liquidos wallpaper /usr/share/backgrounds/liquidos/liquidos-dark.svg` cambia el fondo.
+
+Si algo falla, `liquidos report` deja un informe en `/tmp` con lo necesario para diagnosticar.
+
 ---
 
 ## 6. Grabar en USB
