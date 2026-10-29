@@ -43,8 +43,11 @@ ocupar 15 GB de disco. GitHub compila por ti y te da la ISO como artefacto.
    Actions**. Sin ellos la ISO se construye igual. Detalles en
    [`DESCARGAS.md`](DESCARGAS.md).
 
-El flujo está en `.github/workflows/build-iso.yml` y usa `ubuntu-24.04`
-con `live-build`, `debootstrap`, GRUB BIOS+UEFI y `zstd`.
+El flujo está en `.github/workflows/build-iso.yml`: el runner `ubuntu-24.04`
+ejecuta la compilación dentro de un contenedor **Debian 12** con `live-build`,
+`debootstrap`, GRUB BIOS+UEFI y `zstd`. Así se usa la versión de `live-build`
+de bookworm (la de Ubuntu 24.04 es demasiado antigua y no acepta
+`--bootloaders` ni `--uefi-secure-boot`).
 
 > El runner gratuito tiene ~14 GB libres; el workflow borra toolchains
 > preinstaladas para dejar espacio antes de compilar.

@@ -1,0 +1,9 @@
+# Contexto mínimo para construir la imagen de compilación de LiquidOS
+.git
+.github
+dist
+build/work
+preview
+docs
+*.iso
+*.sha256

@@ -14,18 +14,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         debootstrap \
         xorriso \
         squashfs-tools \
+        zstd \
+        xz-utils \
+        bzip2 \
+        cpio \
         mtools \
         dosfstools \
         grub-pc-bin \
         grub-efi-amd64-bin \
+        grub-efi-amd64-signed \
         grub-common \
+        shim-signed \
         isolinux \
         syslinux-common \
         syslinux-efi \
+        debian-archive-keyring \
         rsync \
         git \
         ca-certificates \
         curl \
+        wget \
         file \
         python3-minimal \
     && rm -rf /var/lib/apt/lists/*

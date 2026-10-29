@@ -89,21 +89,17 @@ jobs:
           echo "Espacio tras la limpieza:"
           df -h /
 
-      - name: Instalar live-build y utilidades
+      - name: Comprobar Docker
+        # La imagen de Debian 12 trae la versión de live-build que entiende
+        # todas las opciones del proyecto. La de Ubuntu 24.04 es demasiado
+        # antigua (3.0~a57) y rechaza --bootloaders y --uefi-secure-boot.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            live-build debootstrap xorriso squashfs-tools zstd \
-            mtools dosfstools isolinux syslinux-common syslinux-efi \
-            grub-pc-bin grub-efi-amd64-bin grub-efi-amd64-signed \
-            shim-signed debian-archive-keyring rsync git ca-certificates
-          lb --version
+          docker --version
+          docker info --format '{{.ServerVersion}}'
 
       - name: Construir la ISO
         run: |
-          sudo --preserve-env=LIQUIDOS_VERSION,LIQUIDOS_ARCH \
-            env LIQUIDOS_VERSION="$LIQUIDOS_VERSION" LIQUIDOS_ARCH="$LIQUIDOS_ARCH" \
-            ./build/build-iso.sh
+          ./build/docker-build.sh
 
       - name: Reunir resultados
         run: |
